@@ -17,7 +17,7 @@ Managed = TypeVar("Managed", bound=OpenstackItem)
 RawModel = TypeVar("RawModel")
 
 
-class Manager(Generic[Managed, RawModel], metaclass=ABCMeta):
+class UpperManager(Generic[Managed], metaclass=ABCMeta):
     """
     Manager for OpenStack items.
     """
@@ -29,6 +29,75 @@ class Manager(Generic[Managed, RawModel], metaclass=ABCMeta):
         :return: the item type
         """
 
+    @abstractmethod
+    def get_by_id(self, identifier: OpenstackIdentifier=None) -> Managed:
+        """
+        Gets the managed OpenStack item that has the given identifier
+        :param identifier: the item's identifier
+        :return: the matched item
+        """
+
+    @abstractmethod
+    def get_all(self) -> Set[Managed]:
+        """
+        Gets all of the OpenStack items of the managed type.
+        :return: the OpenStack items
+        """
+
+    @abstractmethod
+    def _delete(self, item: Managed = None):
+        """
+        Deletes an OpenStack item with the given identifier.
+        :param item: the OpenStack item to delete
+        """
+
+    def delete(self, *, item: Managed=None, identifier: OpenstackIdentifier=None):
+        """
+        Deletes the given OpenStack item.
+        :param item: the item to delete
+        :param identifier: the identifier of the item to delete
+        """
+        if item is not None and identifier is not None and item.identifier != identifier:
+            raise ValueError(f"An item has been given with the identifier {item.identifier}, along with a different "
+                             f"identifier {identifier} - provide either the item or the identifier")
+        if item is None and identifier is None:
+            raise ValueError("An item or identifier must be provided")
+        if identifier is None and item is not None:
+            identifier = item.identifier
+        self._delete(identifier)
+
+
+class KeypairManager(UpperManager[OpenstackKeypair], metaclass=ABCMeta):
+    """
+    Manager of key-pairs.
+    """
+    @property
+    def item_type(self):
+        return OpenstackKeypair
+
+
+class InstanceManager(UpperManager[OpenstackInstance], metaclass=ABCMeta):
+    """
+    Manager of key-pairs.
+    """
+    @property
+    def item_type(self):
+        return OpenstackInstance
+
+
+class ImageManager(UpperManager[OpenstackImage], metaclass=ABCMeta):
+    """
+    Manager of key-pairs.
+    """
+    @property
+    def item_type(self):
+        return OpenstackImage
+
+
+class RawModelConvertingManager(Generic[Managed, RawModel], UpperManager[Managed], metaclass=ABCMeta):
+    """
+    Manager for OpenStack items.
+    """
     @abstractmethod
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> RawModel:
         """
@@ -50,13 +119,6 @@ class Manager(Generic[Managed, RawModel], metaclass=ABCMeta):
         Converts the raw model to the domain model.
         :param model: the raw model
         :return: the domain model equivalent
-        """
-
-    @abstractmethod
-    def _delete(self, item: Managed = None):
-        """
-        Deletes an OpenStack item with the given identifier.
-        :param item: the OpenStack item to delete
         """
 
     def __init__(self, openstack_credentials: OpenstackCredentials):
@@ -85,23 +147,9 @@ class Manager(Generic[Managed, RawModel], metaclass=ABCMeta):
             models.add(self._convert_raw(item))
         return models
 
-    def delete(self, *, item: Managed=None, identifier: OpenstackIdentifier=None):
-        """
-        Deletes the given OpenStack item.
-        :param item: the item to delete
-        :param identifier: the identifier of the item to delete
-        """
-        if item is not None and identifier is not None and item.identifier != identifier:
-            raise ValueError(f"An item has been given with the identifier {item.identifier}, along with a different "
-                             f"identifier {identifier} - provide either the item or the identifier")
-        if item is None and identifier is None:
-            raise ValueError("An item or identifier must be provided")
-        if identifier is None and item is not None:
-            identifier = item.identifier
-        self._delete(identifier)
 
 
-class _NovaManager(Generic[Managed, RawModel], Manager[Managed, RawModel], metaclass=ABCMeta):
+class _NovaManager(Generic[Managed, RawModel], RawModelConvertingManager[Managed, RawModel], metaclass=ABCMeta):
     """
     Manager that uses Nova client.
     """
@@ -117,14 +165,10 @@ class _NovaManager(Generic[Managed, RawModel], Manager[Managed, RawModel], metac
                                   auth_url=self.openstack_credentials.auth_url)
 
 
-class OpenstackKeypairManager(_NovaManager[OpenstackKeypair, Keypair]):
+class OpenstackKeypairManager(KeypairManager, _NovaManager[OpenstackKeypair, Keypair]):
     """
     Manager for OpenStack key-pairs.
     """
-    @property
-    def item_type(self):
-        return OpenstackKeypair
-
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> RawModel:
         return self._client.keypairs.get(identifier)
 
@@ -142,7 +186,7 @@ class OpenstackKeypairManager(_NovaManager[OpenstackKeypair, Keypair]):
         self._client.keypairs.delete(identifier)
 
 
-class OpenstackInstanceManager(_NovaManager[OpenstackInstance, Server]):
+class OpenstackInstanceManager(InstanceManager, _NovaManager[OpenstackInstance, Server]):
     """
     Manager for OpenStack instances.
     """
@@ -176,7 +220,7 @@ class OpenstackInstanceManager(_NovaManager[OpenstackInstance, Server]):
             self._client.servers.force_delete(identifier)
 
 
-class OpenstackImageManager(Manager[OpenstackImage, Image]):
+class OpenstackImageManager(ImageManager, RawModelConvertingManager[OpenstackImage, Image]):
     """
     Manager for OpenStack images.
     """
