@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TypeVar, Generic, Set, Type
+from typing import TypeVar, Generic, Set, Type, Union, Sequence, Optional, List
 
 from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, \
     OpenstackImage, OpenstackIdentifier
@@ -21,7 +21,7 @@ class Manager(Generic[Managed], metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_by_id(self, identifier: OpenstackIdentifier=None) -> Managed:
+    def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[Managed]:
         """
         Gets the managed OpenStack item that has the given identifier
         :param identifier: the item's identifier
@@ -29,10 +29,26 @@ class Manager(Generic[Managed], metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def get_by_name(self, name: str) -> List[Managed]:
+        """
+        TODO
+        :param name:
+        :return:
+        """
+
+    @abstractmethod
     def get_all(self) -> Set[Managed]:
         """
         Gets all of the OpenStack items of the managed type.
         :return: the OpenStack items
+        """
+
+    @abstractmethod
+    def create(self, model: Managed) -> Managed:
+        """
+        TODO
+        :param model:
+        :return:
         """
 
     @abstractmethod

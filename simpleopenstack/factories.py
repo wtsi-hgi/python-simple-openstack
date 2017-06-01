@@ -13,7 +13,7 @@ class OpenstackItemFactory(Generic[_OpenstackItemManagerType], metaclass=ABCMeta
     """
     Factory for Openstack item managers.
     """
-    def __init__(self, *, openstack_credentials: Optional[OpenstackCredentials]=None, mock_managers: bool=False):
+    def __init__(self, openstack_credentials: Optional[OpenstackCredentials]=None, mock_managers: bool=False):
         """
         Constructor.
         :param openstack_credentials: credentials for OpenStack

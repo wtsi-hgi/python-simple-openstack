@@ -1,8 +1,9 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Set
+from typing import Generic, Iterable, Set, Sequence, Optional, List
 
 from dateutil.parser import parse as parse_datetime
 from glanceclient.client import Client as GlanceClient
+from glanceclient.exc import HTTPNotFound
 from keystoneclient.v2_0 import Client as KeystoneClient
 from novaclient.client import Client as NovaClient
 from novaclient.exceptions import ClientException
@@ -21,9 +22,17 @@ class _RawModelConvertingManager(Generic[Managed, RawModel], Manager[Managed], m
     Manager for OpenStack items.
     """
     @abstractmethod
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> RawModel:
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[RawModel]:
         """
         Gets raw model of the OpenStack item with the given identifier.
+        :param identifier: the OpenStack item's identifier
+        :return: raw model of the OpenStack item
+        """
+
+    @abstractmethod
+    def _get_by_name_raw(self, name: str) -> Sequence[RawModel]:
+        """
+        Gets raw models of the OpenStack items with the given name.
         :param identifier: the OpenStack item's identifier
         :return: raw model of the OpenStack item
         """
@@ -50,20 +59,21 @@ class _RawModelConvertingManager(Generic[Managed, RawModel], Manager[Managed], m
         """
         self.openstack_credentials = openstack_credentials
 
-    def get_by_id(self, identifier: OpenstackIdentifier=None) -> Managed:
-        """
-        Gets the managed OpenStack item that has the given identifier
-        :param identifier: the item's identifier
-        :return: the matched item
-        """
-        item = self._get_by_id_raw(identifier)
-        return self._convert_raw(item)
+    def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[Managed]:
+        raw_item = self._get_by_id_raw(identifier)
+        if raw_item is None:
+            return None
+        item = self._convert_raw(raw_item)
+        assert item.identifier == identifier
+        return item
+
+    def get_by_name(self, name: str) -> List[Managed]:
+        items = [self._convert_raw(raw_model) for raw_model in self._get_by_name_raw(name)]
+        assert len({item.name for item in items if item.name == name}) == 1
+        return items
 
     def get_all(self) -> Set[Managed]:
-        """
-        Gets all of the OpenStack items of the managed type.
-        :return: the OpenStack items
-        """
+        # TODO: This could be list comprehended
         models: Set[Managed] = set()
         for item in self._get_all_raw():
             models.add(self._convert_raw(item))
@@ -90,10 +100,16 @@ class NovaOpenstackKeypairManager(OpenstackKeypairManager, _NovaManager[Openstac
     """
     Manager for OpenStack key-pairs.
     """
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> RawModel:
-        return self._client.keypairs.get(identifier)
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Keypair]:
+        try:
+            self._client.keypairs.get(identifier)
+        except HTTPNotFound:
+            return None
 
-    def _get_all_raw(self) -> Iterable[RawModel]:
+    def _get_by_name_raw(self, name: str) -> Sequence[OpenstackKeypair]:
+        return self._client.keypairs.find(name=name)
+
+    def _get_all_raw(self) -> Iterable[Keypair]:
         return self._client.keypairs.list()
 
     def _convert_raw(self, model: Keypair) -> OpenstackKeypair:
@@ -106,6 +122,9 @@ class NovaOpenstackKeypairManager(OpenstackKeypairManager, _NovaManager[Openstac
     def _delete(self, identifier: OpenstackIdentifier=None):
         self._client.keypairs.delete(identifier)
 
+    def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
+        raise NotImplementedError()
+
 
 class NovaOpenstackInstanceManager(OpenstackInstanceManager, _NovaManager[OpenstackInstance, Server]):
     """
@@ -115,10 +134,16 @@ class NovaOpenstackInstanceManager(OpenstackInstanceManager, _NovaManager[Openst
     def item_type(self):
         return OpenstackInstance
 
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> RawModel:
-        return self._client.servers.get(identifier)
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Server]:
+        try:
+            self._client.servers.get(identifier)
+        except HTTPNotFound:
+            return None
 
-    def _get_all_raw(self) -> Iterable[RawModel]:
+    def _get_by_name_raw(self, name: str) -> Sequence[OpenstackInstance]:
+        return self._client.servers.find(name=name)
+
+    def _get_all_raw(self) -> Iterable[Server]:
         return self._client.servers.list()
 
     def _convert_raw(self, model: Server) -> OpenstackInstance:
@@ -128,7 +153,8 @@ class NovaOpenstackInstanceManager(OpenstackInstanceManager, _NovaManager[Openst
             created_at=parse_datetime(model.created),
             updated_at=parse_datetime(model.updated),
             image=model.image["id"],
-            key_name=model.key_name
+            key_name=model.key_name,
+            flavor=model.flavor["id"]
         )
 
     def _delete(self, identifier: OpenstackIdentifier=None):
@@ -139,6 +165,32 @@ class NovaOpenstackInstanceManager(OpenstackInstanceManager, _NovaManager[Openst
                 raise e
             self._client.servers.reset_state(identifier)
             self._client.servers.force_delete(identifier)
+
+    def create(self, model: OpenstackInstance):
+        raise NotImplementedError()
+        # if model.identifier is not None:
+        #     raise ValueError(f"Cannot create an instance with a particular identifier (\"{model.identifier}\" given)")
+        #
+        # image_manager = GlanceOpenstackImageManager(self.openstack_credentials)
+        # image = image_manager.get_by_id(model.image)
+        # if image is None:
+        #     images = image_manager.get_by_name(model.image)
+        #     if len(images) > 1:
+        #         raise ValueError(f"There is more than one image with the name \"{model.name}\" - please refer to the "
+        #                          f"required image by ID to resolve the ambiguity")
+        #     elif len(images) == 0:
+        #         raise ValueError(f"No image with ID or name \"{model.image}\" found")
+        #     image = images[0]
+        #
+        # # TODO: This hints at the requirement of a flavor manager!
+        # try:
+        #     flavor = self._client.flavors.get(model.flavor)
+        # except NotFound:
+        #     try:
+        #         flavor = self._client.flavors.find(name=model.flavor)
+        #     except NotFound:
+        #         raise ValueError(f"Could not find flavor with ID or name \"{model.flavor}\"")
+        # self._client.servers.create(name=model.name, image=image.identifier, flavor=flavor.id, network="123")
 
 
 class GlanceOpenstackImageManager(OpenstackImageManager, _RawModelConvertingManager[OpenstackImage, Image]):
@@ -162,10 +214,18 @@ class GlanceOpenstackImageManager(OpenstackImageManager, _RawModelConvertingMana
         glance_endpoint = keystone.service_catalog.url_for(service_type="image", endpoint_type="publicURL")
         self._client = GlanceClient(GlanceOpenstackImageManager.GLANCE_VERSION, glance_endpoint, token=keystone.auth_token)
 
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier = None) -> RawModel:
-        return self._client.images.get(identifier)
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Image]:
+        try:
+            return self._client.images.get(identifier)
+        except HTTPNotFound:
+            return None
 
-    def _get_all_raw(self) -> Iterable[RawModel]:
+    def _get_by_name_raw(self, name: str) -> Sequence[Image]:
+        # XXX: No obvious way of doing this in the (terrible) documentation:
+        # https://docs.openstack.org/developer/python-glanceclient/ref/v2/images.html
+        return [raw_item for raw_item in self._get_all_raw() if raw_item.name == name]
+
+    def _get_all_raw(self) -> Iterable[Image]:
         return self._client.images.list()
 
     def _convert_raw(self, model: Image) -> OpenstackImage:
@@ -179,3 +239,7 @@ class GlanceOpenstackImageManager(OpenstackImageManager, _RawModelConvertingMana
 
     def _delete(self, identifier: OpenstackIdentifier=None):
         self._client.images.delete(identifier)
+
+    def create(self, model: OpenstackImage) -> OpenstackImage:
+        raise NotImplementedError()
+
