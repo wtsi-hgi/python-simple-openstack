@@ -1,17 +1,38 @@
 from abc import ABCMeta
 from typing import TypeVar, Generic, Optional
 
+from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager, \
+    OpenstackItemManager
+from simpleopenstack.models import OpenstackCredentials
 from simpleopenstack.os_managers import GlanceOpenstackImageManager, NovaOpenstackKeypairManager, \
     NovaOpenstackInstanceManager
-from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager
-from simpleopenstack.models import OpenstackItem, OpenstackCredentials
 from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackInstanceManager, \
     MockOpenstackImageManager
 
-_OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=OpenstackItem)
+_OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=OpenstackItemManager)
 
 
-class OpenstackItemFactory(Generic[_OpenstackItemManagerType], metaclass=ABCMeta):
+
+
+
+
+# class Factory:
+#     """
+#     TODO
+#     """
+#     _factory_cache: Set[OpenstackItemManager] = set()
+#
+#     def __init__(self, openstack_credentials: Optional[OpenstackCredentials]=None):
+#         self.openstack_credentials = openstack_credentials
+#
+#     def create(self, manager_type: Type[OpenstackItemManager]) -> Type[OpenstackItemManager]:
+#         pass
+
+
+
+
+
+class OpenstackItemManagerFactory(Generic[_OpenstackItemManagerType], metaclass=ABCMeta):
     """
     Factory for Openstack item managers.
     """
@@ -31,7 +52,7 @@ class OpenstackItemFactory(Generic[_OpenstackItemManagerType], metaclass=ABCMeta
         """
 
 
-class OpenstackKeypairManagerFactory(OpenstackItemFactory[OpenstackKeypairManager]):
+class OpenstackKeypairManagerFactory(OpenstackItemManagerFactory[OpenstackKeypairManager]):
     """
     Factory for Openstack keypair managers.
     """
@@ -40,7 +61,7 @@ class OpenstackKeypairManagerFactory(OpenstackItemFactory[OpenstackKeypairManage
             if not self.mock_managers else MockOpenstackKeypairManager()
 
 
-class OpenstackInstanceManagerFactory(OpenstackItemFactory[OpenstackInstanceManager]):
+class OpenstackInstanceManagerFactory(OpenstackItemManagerFactory[OpenstackInstanceManager]):
     """
     Factory for Openstack instance managers.
     """
@@ -49,7 +70,7 @@ class OpenstackInstanceManagerFactory(OpenstackItemFactory[OpenstackInstanceMana
             if not self.mock_managers else MockOpenstackInstanceManager()
 
 
-class OpenstackImageManagerFactory(OpenstackItemFactory[OpenstackImageManager]):
+class OpenstackImageManagerFactory(OpenstackItemManagerFactory[OpenstackImageManager]):
     """
     Factory for Openstack image managers.
     """

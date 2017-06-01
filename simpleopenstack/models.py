@@ -35,21 +35,10 @@ class Model(metaclass=ABCMeta):
 # -----
 
 
-class OpenstackCredentials(Model):
+class OpenstackConnector(Model):
     """
-    Credentials used to login to OpenStack.
+    TODO
     """
-    def __init__(self, auth_url: str, tenant: str, username: str, password: str):
-        """
-        TODO
-        :param auth_url:
-        :param username:
-        :param password:
-        """
-        self.auth_url = auth_url
-        self.tenant = tenant
-        self.username = username
-        self.password = password
 
 
 class Timestamped(Model, metaclass=ABCMeta):

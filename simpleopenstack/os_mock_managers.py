@@ -1,20 +1,26 @@
-from simpleopenstack.managers import Manager
-from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage
+from simpleopenstack.managers import OpenstackItemManager
+from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage, OpenstackConnector
 
 
-class MockOpenstackKeypairManager(Manager[OpenstackKeypair]):
+class MockOpenstackConnector(OpenstackConnector):
+    """
+    TODO
+    """
+
+
+class MockOpenstackKeypairManager(OpenstackItemManager[OpenstackKeypair]):
     """
     Manager of key-pairs.
     """
 
 
-class MockOpenstackInstanceManager(Manager[OpenstackInstance]):
+class MockOpenstackInstanceManager(OpenstackItemManager[OpenstackInstance]):
     """
     Manager of instances.
     """
 
 
-class MockOpenstackImageManager(Manager[OpenstackImage]):
+class MockOpenstackImageManager(OpenstackItemManager[OpenstackImage]):
     """
     Manager of images.
     """

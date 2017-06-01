@@ -2,13 +2,14 @@ from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Set, Type, Union, Sequence, Optional, List
 
 from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, \
-    OpenstackImage, OpenstackIdentifier
+    OpenstackImage, OpenstackIdentifier, OpenstackConnector
 
 Managed = TypeVar("Managed", bound=OpenstackItem)
 RawModel = TypeVar("RawModel")
+ConnectorType = TypeVar("ConnectorType", bound=OpenstackConnector)
 
 
-class Manager(Generic[Managed], metaclass=ABCMeta):
+class OpenstackItemManager(Generic[Managed, ConnectorType], metaclass=ABCMeta):
     """
     Manager for OpenStack items.
     """
@@ -58,6 +59,13 @@ class Manager(Generic[Managed], metaclass=ABCMeta):
         :param item: the OpenStack item to delete
         """
 
+    def __init__(self, openstack_connector: ConnectorType):
+        """
+        Constructor.
+        :param openstack_connector: connector to Openstack environment
+        """
+        self.openstack_connector = openstack_connector
+
     def delete(self, *, item: Managed=None, identifier: OpenstackIdentifier=None):
         """
         Deletes the given OpenStack item.
@@ -74,7 +82,8 @@ class Manager(Generic[Managed], metaclass=ABCMeta):
         self._delete(identifier)
 
 
-class OpenstackKeypairManager(Manager[OpenstackKeypair], metaclass=ABCMeta):
+class OpenstackKeypairManager(
+    Generic[ConnectorType], OpenstackItemManager[OpenstackKeypair, ConnectorType], metaclass=ABCMeta):
     """
     Manager of key-pairs.
     """
@@ -83,7 +92,8 @@ class OpenstackKeypairManager(Manager[OpenstackKeypair], metaclass=ABCMeta):
         return OpenstackKeypair
 
 
-class OpenstackInstanceManager(Manager[OpenstackInstance], metaclass=ABCMeta):
+class OpenstackInstanceManager(
+    Generic[ConnectorType], OpenstackItemManager[OpenstackInstance, ConnectorType], metaclass=ABCMeta):
     """
     Manager of instances.
     """
@@ -92,7 +102,8 @@ class OpenstackInstanceManager(Manager[OpenstackInstance], metaclass=ABCMeta):
         return OpenstackInstance
 
 
-class OpenstackImageManager(Manager[OpenstackImage], metaclass=ABCMeta):
+class OpenstackImageManager(
+    Generic[ConnectorType], OpenstackItemManager[OpenstackImage, ConnectorType], metaclass=ABCMeta):
     """
     Manager of images.
     """
