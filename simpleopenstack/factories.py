@@ -5,6 +5,8 @@ from simpleopenstack.os_managers import GlanceOpenstackImageManager, NovaOpensta
     NovaOpenstackInstanceManager
 from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager
 from simpleopenstack.models import OpenstackItem, OpenstackCredentials
+from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackInstanceManager, \
+    MockOpenstackImageManager
 
 _OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=OpenstackItem)
 
@@ -34,7 +36,8 @@ class OpenstackKeypairManagerFactory(OpenstackItemFactory[OpenstackKeypairManage
     Factory for Openstack keypair managers.
     """
     def create(self) -> OpenstackKeypairManager:
-        return NovaOpenstackKeypairManager(self.openstack_credentials)
+        return NovaOpenstackKeypairManager(self.openstack_credentials) \
+            if not self.mock_managers else MockOpenstackKeypairManager()
 
 
 class OpenstackInstanceManagerFactory(OpenstackItemFactory[OpenstackInstanceManager]):
@@ -42,7 +45,8 @@ class OpenstackInstanceManagerFactory(OpenstackItemFactory[OpenstackInstanceMana
     Factory for Openstack instance managers.
     """
     def create(self) -> OpenstackInstanceManager:
-        return NovaOpenstackInstanceManager(self.openstack_credentials)
+        return NovaOpenstackInstanceManager(self.openstack_credentials) \
+            if not self.mock_managers else MockOpenstackInstanceManager()
 
 
 class OpenstackImageManagerFactory(OpenstackItemFactory[OpenstackImageManager]):
@@ -50,4 +54,5 @@ class OpenstackImageManagerFactory(OpenstackItemFactory[OpenstackImageManager]):
     Factory for Openstack image managers.
     """
     def create(self) -> OpenstackImageManager:
-        return GlanceOpenstackImageManager(self.openstack_credentials)
+        return GlanceOpenstackImageManager(self.openstack_credentials) \
+            if not self.mock_managers else MockOpenstackImageManager()
