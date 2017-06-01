@@ -37,7 +37,7 @@ class Model(metaclass=ABCMeta):
 
 class OpenstackConnector(Model):
     """
-    TODO
+    Connector to an OpenStack environment.
     """
 
 

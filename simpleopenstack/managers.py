@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TypeVar, Generic, Set, Type, Union, Sequence, Optional, List
+from typing import TypeVar, Generic, Set, Type, Optional, List
 
 from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, \
     OpenstackImage, OpenstackIdentifier, OpenstackConnector
@@ -83,7 +83,7 @@ class OpenstackItemManager(Generic[Managed, ConnectorType], metaclass=ABCMeta):
 
 
 class OpenstackKeypairManager(
-    Generic[ConnectorType], OpenstackItemManager[OpenstackKeypair, ConnectorType], metaclass=ABCMeta):
+       Generic[ConnectorType], OpenstackItemManager[OpenstackKeypair, ConnectorType], metaclass=ABCMeta):
     """
     Manager of key-pairs.
     """
@@ -93,7 +93,7 @@ class OpenstackKeypairManager(
 
 
 class OpenstackInstanceManager(
-    Generic[ConnectorType], OpenstackItemManager[OpenstackInstance, ConnectorType], metaclass=ABCMeta):
+        Generic[ConnectorType], OpenstackItemManager[OpenstackInstance, ConnectorType], metaclass=ABCMeta):
     """
     Manager of instances.
     """
@@ -103,7 +103,7 @@ class OpenstackInstanceManager(
 
 
 class OpenstackImageManager(
-    Generic[ConnectorType], OpenstackItemManager[OpenstackImage, ConnectorType], metaclass=ABCMeta):
+        Generic[ConnectorType], OpenstackItemManager[OpenstackImage, ConnectorType], metaclass=ABCMeta):
     """
     Manager of images.
     """
