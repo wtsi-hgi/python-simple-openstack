@@ -1,12 +1,14 @@
 import unittest
+from uuid import uuid4
 from abc import ABCMeta, abstractmethod
 from copy import copy
 from typing import Generic, Sequence, TypeVar
 
-from simpleopenstack.managers import Managed, OpenstackItemManager
-from simpleopenstack.models import OpenstackIdentifier
+from simpleopenstack.managers import Managed, OpenstackItemManager, OpenstackKeypairManager
+from simpleopenstack.models import OpenstackIdentifier, OpenstackKeypair
 
 Manager = TypeVar("Manager", bound=OpenstackItemManager)
+KeypairManager = TypeVar("KeypairManager", bound=OpenstackKeypairManager)
 
 
 class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, metaclass=ABCMeta):
@@ -69,6 +71,14 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
     # TODO: Test other properties
 
 
+class OpenstackKeypairManagerTest(
+        Generic[KeypairManager], OpenstackItemManagerTest[KeypairManager, OpenstackKeypair], metaclass=ABCMeta):
+    """
+    Tests for `OpenstackItemManagerTest`.
+    """
+    def _create_test_item(self) -> OpenstackKeypair:
+        return OpenstackKeypair(name=f"example-keypair-{uuid4()}")
 
-if __name__ == "__main__":
-    unittest.main()
+
+# TODO: Create other manager test setups
+
