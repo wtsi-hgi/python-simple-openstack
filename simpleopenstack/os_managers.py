@@ -242,4 +242,3 @@ class GlanceOpenstackImageManager(OpenstackImageManager, _RawModelConvertingMana
 
     def create(self, model: OpenstackImage) -> OpenstackImage:
         raise NotImplementedError()
-

@@ -1,7 +1,7 @@
 from abc import ABCMeta
 from typing import TypeVar, Generic, Optional
 
-from simpleopenstack._managers import GlanceOpenstackImageManager, NovaOpenstackKeypairManager, \
+from simpleopenstack.os_managers import GlanceOpenstackImageManager, NovaOpenstackKeypairManager, \
     NovaOpenstackInstanceManager
 from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager
 from simpleopenstack.models import OpenstackItem, OpenstackCredentials
