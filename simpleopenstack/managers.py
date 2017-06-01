@@ -6,10 +6,10 @@ from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackIns
 
 Managed = TypeVar("Managed", bound=OpenstackItem)
 RawModel = TypeVar("RawModel")
-ConnectorType = TypeVar("ConnectorType", bound=OpenstackConnector)
+Connector = TypeVar("Connector", bound=OpenstackConnector)
 
 
-class OpenstackItemManager(Generic[Managed, ConnectorType], metaclass=ABCMeta):
+class OpenstackItemManager(Generic[Managed, Connector], metaclass=ABCMeta):
     """
     Manager for OpenStack items.
     """
@@ -59,7 +59,7 @@ class OpenstackItemManager(Generic[Managed, ConnectorType], metaclass=ABCMeta):
         :param item: the OpenStack item to delete
         """
 
-    def __init__(self, openstack_connector: ConnectorType):
+    def __init__(self, openstack_connector: Connector):
         """
         Constructor.
         :param openstack_connector: connector to Openstack environment
@@ -83,7 +83,7 @@ class OpenstackItemManager(Generic[Managed, ConnectorType], metaclass=ABCMeta):
 
 
 class OpenstackKeypairManager(
-       Generic[ConnectorType], OpenstackItemManager[OpenstackKeypair, ConnectorType], metaclass=ABCMeta):
+       Generic[Connector], OpenstackItemManager[OpenstackKeypair, Connector], metaclass=ABCMeta):
     """
     Manager of key-pairs.
     """
@@ -93,7 +93,7 @@ class OpenstackKeypairManager(
 
 
 class OpenstackInstanceManager(
-        Generic[ConnectorType], OpenstackItemManager[OpenstackInstance, ConnectorType], metaclass=ABCMeta):
+        Generic[Connector], OpenstackItemManager[OpenstackInstance, Connector], metaclass=ABCMeta):
     """
     Manager of instances.
     """
@@ -103,7 +103,7 @@ class OpenstackInstanceManager(
 
 
 class OpenstackImageManager(
-        Generic[ConnectorType], OpenstackItemManager[OpenstackImage, ConnectorType], metaclass=ABCMeta):
+        Generic[Connector], OpenstackItemManager[OpenstackImage, Connector], metaclass=ABCMeta):
     """
     Manager of images.
     """

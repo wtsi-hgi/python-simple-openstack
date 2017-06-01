@@ -10,19 +10,19 @@ class MockOpenstackConnector(OpenstackConnector):
 
 class MockOpenstackKeypairManager(OpenstackKeypairManager[MockOpenstackConnector]):
     """
-    Manager of key-pairs.
+    Mock key-pair manager.
     """
 
 
 class MockOpenstackInstanceManager(OpenstackInstanceManager[MockOpenstackConnector]):
     """
-    Manager of instances.
+    Mock instance manager.
     """
 
 
 class MockOpenstackImageManager(OpenstackImageManager[MockOpenstackConnector]):
     """
-    Manager of images.
+    Mock image manager.
     """
 
 
