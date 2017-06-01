@@ -31,9 +31,9 @@ class Manager(Generic[Managed], metaclass=ABCMeta):
     @abstractmethod
     def get_by_name(self, name: str) -> List[Managed]:
         """
-        TODO
-        :param name:
-        :return:
+        Gets the managed OpenStack items with the given name
+        :param name: the items' name
+        :return: the matched items
         """
 
     @abstractmethod
@@ -46,13 +46,13 @@ class Manager(Generic[Managed], metaclass=ABCMeta):
     @abstractmethod
     def create(self, model: Managed) -> Managed:
         """
-        TODO
-        :param model:
-        :return:
+        Creates a manged item in OpenStack, based on the given model.
+        :param model: the model to base the item created in OpenStack off. Should not have an identifier
+        :return: model of the created item in OpenStack. It will have an identifier
         """
 
     @abstractmethod
-    def _delete(self, item: Managed = None):
+    def _delete(self, item: Managed=None):
         """
         Deletes an OpenStack item with the given identifier.
         :param item: the OpenStack item to delete
@@ -85,7 +85,7 @@ class OpenstackKeypairManager(Manager[OpenstackKeypair], metaclass=ABCMeta):
 
 class OpenstackInstanceManager(Manager[OpenstackInstance], metaclass=ABCMeta):
     """
-    Manager of key-pairs.
+    Manager of instances.
     """
     @property
     def item_type(self):
@@ -94,7 +94,7 @@ class OpenstackInstanceManager(Manager[OpenstackInstance], metaclass=ABCMeta):
 
 class OpenstackImageManager(Manager[OpenstackImage], metaclass=ABCMeta):
     """
-    Manager of key-pairs.
+    Manager of images.
     """
     @property
     def item_type(self):
