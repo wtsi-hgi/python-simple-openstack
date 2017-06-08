@@ -1,13 +1,26 @@
 from typing import Type, Optional, Set, List
 
 from simpleopenstack.managers import OpenstackKeypairManager, OpenstackInstanceManager, OpenstackImageManager
-from simpleopenstack.models import OpenstackConnector, OpenstackItem, OpenstackIdentifier, OpenstackKeypair
+from simpleopenstack.models import OpenstackConnector, OpenstackItem, OpenstackIdentifier, OpenstackKeypair, \
+    OpenstackImage, OpenstackInstance, Model
+
+
+class MockOpenstack(Model):
+    """
+    TODO
+    """
+    def __init__(self):
+        self.images: List[OpenstackImage] = []
+        self.instances: List[OpenstackInstance] = []
+        self.keypairs: List[OpenstackKeypair] = []
 
 
 class MockOpenstackConnector(OpenstackConnector):
     """
     TODO
     """
+    def __init__(self, mock_openstack: MockOpenstack):
+        self.mock_openstack = mock_openstack
 
 
 class MockOpenstackKeypairManager(OpenstackKeypairManager[MockOpenstackConnector]):
@@ -24,9 +37,10 @@ class MockOpenstackKeypairManager(OpenstackKeypairManager[MockOpenstackConnector
         return []
 
     def get_all(self) -> Set[OpenstackKeypair]:
-        return set()
+        return set(self.openstack_connector.mock_openstack.keypairs)
 
     def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
+        self.openstack_connector.mock_openstack.keypairs.append(model)
         return model
 
     def _delete(self, item: OpenstackKeypair=None):

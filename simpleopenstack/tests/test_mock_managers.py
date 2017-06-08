@@ -5,21 +5,14 @@ from copy import copy
 from uuid import uuid4
 
 from simpleopenstack.models import OpenstackKeypair, Model, OpenstackImage, OpenstackInstance
-from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackConnector
+from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackConnector, MockOpenstack
 from simpleopenstack.tests._managers import OpenstackKeypairManagerTest
 
-
-# FIXME: This should not be defined here - showing as example!
-class MockOpenstack(Model):
-    def __init__(self):
-        self.images: List[OpenstackImage] = []
-        self.instances: List[OpenstackInstance] = []
-        self.keypairs: List[OpenstackKeypair] = []
 
 
 class MockOpenstackKeypairManagerTest(OpenstackKeypairManagerTest[MockOpenstackKeypairManager]):
     """
-    Tests for `MockOpenstackItemManagerTest`.
+    Tests for `MockOpenstackKeypairManager`.
     """
     def _create_manager(self) -> MockOpenstackKeypairManager:
         return MockOpenstackKeypairManager(self.openstack_connector)
@@ -35,7 +28,7 @@ class MockOpenstackKeypairManagerTest(OpenstackKeypairManagerTest[MockOpenstackK
 
     def setUp(self):
         self._mock_openstack = MockOpenstack()
-        self.openstack_connector = MockOpenstackConnector()     # TODO: Pass in `self._mock_openstack`
+        self.openstack_connector = MockOpenstackConnector(self._mock_openstack)
         super().setUp()
 
 
