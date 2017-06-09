@@ -1,7 +1,10 @@
-from typing import Type, Optional, Set, List
+from copy import copy
+from typing import Optional, Set, List, Generic
+from uuid import uuid4
 
-from simpleopenstack.managers import OpenstackKeypairManager, OpenstackInstanceManager, OpenstackImageManager
-from simpleopenstack.models import OpenstackConnector, OpenstackItem, OpenstackIdentifier, OpenstackKeypair, \
+from simpleopenstack.managers import OpenstackKeypairManager, OpenstackInstanceManager, OpenstackImageManager, \
+    OpenstackItemManager, Managed
+from simpleopenstack.models import OpenstackConnector, OpenstackIdentifier, OpenstackKeypair, \
     OpenstackImage, OpenstackInstance, Model
 
 
@@ -23,39 +26,53 @@ class MockOpenstackConnector(OpenstackConnector):
         self.mock_openstack = mock_openstack
 
 
-class MockOpenstackKeypairManager(OpenstackKeypairManager[MockOpenstackConnector]):
+class MockOpenstackItemManager(Generic[Managed], OpenstackItemManager[Managed, MockOpenstackConnector]):
     """
-    Mock key-pair manager.
+    TODO
     """
-    def item_type(self) -> Type[OpenstackItem]:
-        return type(None)
-
-    def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[OpenstackKeypair]:
+    def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[Managed]:
+        for instance in self.get_all():
+            if instance.identifier == identifier:
+                return instance
         return None
 
-    def get_by_name(self, name: str) -> List[OpenstackKeypair]:
+    def get_by_name(self, name: str) -> List[Managed]:
         return []
 
-    def get_all(self) -> Set[OpenstackKeypair]:
-        return set(self.openstack_connector.mock_openstack.keypairs)
+    def create(self, model: Managed) -> Managed:
+        created = copy(model)
+        created.identifier = uuid4()
+        self.openstack_connector.mock_openstack.instances.append(created)
+        return created
 
-    def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
-        self.openstack_connector.mock_openstack.keypairs.append(model)
-        return model
-
-    def _delete(self, item: OpenstackKeypair=None):
+    def _delete(self, item: Managed=None):
         pass
 
 
-class MockOpenstackInstanceManager(OpenstackInstanceManager[MockOpenstackConnector]):
+class MockOpenstackKeypairManager(
+        MockOpenstackItemManager[OpenstackKeypair], OpenstackKeypairManager[MockOpenstackConnector]):
+    """
+    Mock key-pair manager.
+    """
+    def get_all(self) -> Set[OpenstackKeypair]:
+        return set(self.openstack_connector.mock_openstack.keypairs)
+
+
+class MockOpenstackInstanceManager(
+        MockOpenstackItemManager[OpenstackInstance], OpenstackInstanceManager[MockOpenstackConnector]):
     """
     Mock instance manager.
     """
+    def get_all(self) -> Set[OpenstackInstance]:
+        return set(self.openstack_connector.mock_openstack.instances)
 
 
-class MockOpenstackImageManager(OpenstackImageManager[MockOpenstackConnector]):
+class MockOpenstackImageManager(
+        MockOpenstackItemManager[OpenstackImage], OpenstackImageManager[MockOpenstackConnector]):
     """
     Mock image manager.
     """
+    def get_all(self) -> Set[OpenstackImage]:
+        return set(self.openstack_connector.mock_openstack.images)
 
 

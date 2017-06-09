@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Set, Sequence, Optional, List
+from typing import Generic, Iterable, Set, Sequence, Optional, List, Type
 
 from dateutil.parser import parse as parse_datetime
 from glanceclient.client import Client as GlanceClient
@@ -14,7 +14,7 @@ from novaclient.v2.servers import Server
 from simpleopenstack.managers import Managed, RawModel, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackImageManager, OpenstackItemManager
 from simpleopenstack.models import OpenstackKeypair, OpenstackIdentifier, OpenstackInstance, OpenstackImage, \
-    OpenstackConnector
+    OpenstackConnector, OpenstackItem
 
 
 class RealOpenstackConnector(OpenstackConnector):
@@ -36,7 +36,7 @@ class RealOpenstackConnector(OpenstackConnector):
 
 
 class _RawModelConvertingManager(
-    Generic[Managed, RawModel], OpenstackItemManager[Managed, RealOpenstackConnector], metaclass=ABCMeta):
+        Generic[Managed, RawModel], OpenstackItemManager[Managed, RealOpenstackConnector], metaclass=ABCMeta):
     """
     Manager for OpenStack items.
     """
@@ -114,7 +114,7 @@ class NovaOpenstackKeypairManager(OpenstackKeypairManager[RealOpenstackConnector
     """
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Keypair]:
         try:
-            self._client.keypairs.get(identifier)
+            return self._client.keypairs.get(identifier)
         except HTTPNotFound:
             return None
 
@@ -144,7 +144,7 @@ class NovaOpenstackInstanceManager(OpenstackInstanceManager[RealOpenstackConnect
     Manager for OpenStack instances.
     """
     @property
-    def item_type(self):
+    def item_type(self) -> Type[OpenstackItem]:
         return OpenstackInstance
 
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Server]:
@@ -214,7 +214,7 @@ class GlanceOpenstackImageManager(OpenstackImageManager[RealOpenstackConnector],
     GLANCE_VERSION = "2"
 
     @property
-    def item_type(self):
+    def item_type(self) -> Type[OpenstackItem]:
         return OpenstackImage
 
     def __init__(self, *args, **kwargs):

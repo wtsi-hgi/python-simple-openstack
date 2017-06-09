@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Set, Type, Optional, List
 
-from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, \
-    OpenstackImage, OpenstackIdentifier, OpenstackConnector
+from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, OpenstackImage, \
+    OpenstackIdentifier, OpenstackConnector
 
 Managed = TypeVar("Managed", bound=OpenstackItem)
 RawModel = TypeVar("RawModel")
@@ -15,7 +15,7 @@ class OpenstackItemManager(Generic[Managed, Connector], metaclass=ABCMeta):
     """
     @property
     @abstractmethod
-    def item_type(self) -> Type[OpenstackItem]:
+    def item_type(self) -> Type[Managed]:
         """
         Gets the type of items that the manager manages (i.e. the concrete `Managed` type).
         :return: the item type
@@ -88,7 +88,7 @@ class OpenstackKeypairManager(
     Manager of key-pairs.
     """
     @property
-    def item_type(self):
+    def item_type(self) -> Type[OpenstackKeypair]:
         return OpenstackKeypair
 
 
@@ -98,7 +98,7 @@ class OpenstackInstanceManager(
     Manager of instances.
     """
     @property
-    def item_type(self):
+    def item_type(self) -> Type[OpenstackInstance]:
         return OpenstackInstance
 
 
@@ -108,7 +108,5 @@ class OpenstackImageManager(
     Manager of images.
     """
     @property
-    def item_type(self):
+    def item_type(self) -> Type[OpenstackImage]:
         return OpenstackImage
-
-
