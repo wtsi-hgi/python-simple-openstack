@@ -1,3 +1,4 @@
+from abc import abstractmethod, ABCMeta
 from copy import copy
 from typing import Optional, Set, List, Generic
 from uuid import uuid4
@@ -26,12 +27,23 @@ class MockOpenstackConnector(OpenstackConnector):
         self.mock_openstack = mock_openstack
 
 
-class MockOpenstackItemManager(Generic[Managed], OpenstackItemManager[Managed, MockOpenstackConnector]):
+class MockOpenstackItemManager(
+        Generic[Managed], OpenstackItemManager[Managed, MockOpenstackConnector], metaclass=ABCMeta):
     """
     TODO
     """
+    @abstractmethod
+    def _get_item_collection(self) -> List[Managed]:
+        """
+        TODO
+        :return:
+        """
+
+    def get_all(self) -> Set[Managed]:
+        return set(self._get_item_collection())
+
     def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[Managed]:
-        for instance in self.get_all():
+        for instance in self._get_item_collection():
             if instance.identifier == identifier:
                 return instance
         return None
@@ -42,7 +54,7 @@ class MockOpenstackItemManager(Generic[Managed], OpenstackItemManager[Managed, M
     def create(self, model: Managed) -> Managed:
         created = copy(model)
         created.identifier = uuid4()
-        self.openstack_connector.mock_openstack.instances.append(created)
+        self._get_item_collection().append(created)
         return created
 
     def _delete(self, item: Managed=None):
@@ -54,8 +66,8 @@ class MockOpenstackKeypairManager(
     """
     Mock key-pair manager.
     """
-    def get_all(self) -> Set[OpenstackKeypair]:
-        return set(self.openstack_connector.mock_openstack.keypairs)
+    def _get_item_collection(self) -> List[OpenstackKeypair]:
+        return self.openstack_connector.mock_openstack.keypairs
 
 
 class MockOpenstackInstanceManager(
@@ -63,8 +75,8 @@ class MockOpenstackInstanceManager(
     """
     Mock instance manager.
     """
-    def get_all(self) -> Set[OpenstackInstance]:
-        return set(self.openstack_connector.mock_openstack.instances)
+    def _get_item_collection(self) -> List[OpenstackInstance]:
+        return self.openstack_connector.mock_openstack.instances
 
 
 class MockOpenstackImageManager(
@@ -72,7 +84,7 @@ class MockOpenstackImageManager(
     """
     Mock image manager.
     """
-    def get_all(self) -> Set[OpenstackImage]:
-        return set(self.openstack_connector.mock_openstack.images)
+    def _get_item_collection(self) -> List[OpenstackImage]:
+        return self.openstack_connector.mock_openstack.images
 
 
