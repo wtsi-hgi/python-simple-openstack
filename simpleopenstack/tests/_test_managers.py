@@ -78,6 +78,14 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
         self.item.identifier = self.manager.create(self.item).identifier
         self.assertEqual(self.item, self.manager.get_by_name(self.item.name))
 
+    def test_get_by_name_when_multiple_with_same_name(self):
+        common_name = "same_name"
+        items = {self._create_test_item() for _ in range(3)}
+        for item in items:
+            item.name = common_name
+            item.identifier = self.manager.create(item).identifier
+        self.assertEqual(items, self.manager.get_by_name(common_name))
+
     # TODO: Test other properties
 
 
