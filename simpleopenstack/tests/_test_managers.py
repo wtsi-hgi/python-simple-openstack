@@ -72,7 +72,7 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
         self.assertEqual(self.item, self.manager.get_by_id(self.item.identifier))
 
     def test_get_by_name_when_not_exists(self):
-        self.assertEqual([], self.manager.get_by_name("other"))
+        self.assertIsNone(self.manager.get_by_name("other"))
 
     def test_get_by_name(self):
         self.item.identifier = self.manager.create(self.item).identifier
@@ -80,7 +80,7 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
 
     def test_get_by_name_when_multiple_with_same_name(self):
         common_name = "same_name"
-        items = {self._create_test_item() for _ in range(3)}
+        items = {self._create_test_item() for _ in range(3)}  # Ah!  A magic number!
         for item in items:
             item.name = common_name
             item.identifier = self.manager.create(item).identifier
