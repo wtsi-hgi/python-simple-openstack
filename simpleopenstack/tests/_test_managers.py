@@ -71,6 +71,14 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
         self.item.identifier = self.manager.create(self.item).identifier
         self.assertEqual(self.item, self.manager.get_by_id(self.item.identifier))
 
+<<<<<<< Updated upstream
+=======
+    def test_get_by_name(self):
+        self.item.identifier = self.manager.create(self.item).identifier
+        self.assertEqual(self.item, self.manager.get_by_name(self.item.name))
+
+
+>>>>>>> Stashed changes
     # TODO: Test other properties
 
 
