@@ -43,13 +43,16 @@ class MockOpenstackItemManager(
         return set(self._get_item_collection())
 
     def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[Managed]:
-        for instance in self._get_item_collection():
-            if instance.identifier == identifier:
-                return instance
+        for item in self._get_item_collection():
+            if item.identifier == identifier:
+                return item
         return None
 
-    def get_by_name(self, name: str) -> List[Managed]:
-        return []
+    def get_by_name(self, name: str) -> Optional[Managed]:
+        for item in self._get_item_collection():
+            if item.name == name:
+                return item
+        return None
 
     def create(self, model: Managed) -> Managed:
         created = copy(model)
