@@ -71,6 +71,9 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
         self.item.identifier = self.manager.create(self.item).identifier
         self.assertEqual(self.item, self.manager.get_by_id(self.item.identifier))
 
+    def test_get_by_name_when_not_exists(self):
+        self.assertEqual([], self.manager.get_by_name("other"))
+
     def test_get_by_name(self):
         self.item.identifier = self.manager.create(self.item).identifier
         self.assertEqual(self.item, self.manager.get_by_name(self.item.name))
