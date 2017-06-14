@@ -49,10 +49,11 @@ class MockOpenstackItemManager(
         return None
 
     def get_by_name(self, name: str) -> List[Managed]:
+        matched_items = []
         for item in self._get_item_collection():
             if item.name == name:
-                return item
-        return []
+                matched_items.append(item)
+        return matched_items
 
     def create(self, model: Managed) -> Managed:
         created = copy(model)
