@@ -6,13 +6,15 @@ from simpleopenstack.factories import OpenstackKeypairManagerFactory, OpenstackI
     OpenstackInstanceManagerFactory, OpenstackImageManagerFactory, OpenstackManagerFactory
 from simpleopenstack.managers import OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackImageManager
+from simpleopenstack.models import OpenstackConnector
+from simpleopenstack.os_managers import RealOpenstackConnector
 from simpleopenstack.os_mock_managers import MockOpenstackConnector, MockOpenstack
 from simpleopenstack.tests._test_managers import Manager
 
 ItemManagerFactory = TypeVar("ItemManagerFactory", bound=OpenstackItemManagerFactory)
 
 
-class _TestOpenstackItemManagerFactory(Generic[ItemManagerFactory, Manager], metaclass=ABCMeta):
+class _TestOpenstackItemManagerFactory(Generic[ItemManagerFactory, Manager], unittest.TestCase, metaclass=ABCMeta):
     """
     Tests for `OpenstackItemManagerFactory`.
     """
@@ -34,12 +36,19 @@ class _TestOpenstackItemManagerFactory(Generic[ItemManagerFactory, Manager], met
 
     def setUp(self):
         self.mock_connector = MockOpenstackConnector(MockOpenstack())
+        self.real_connector = RealOpenstackConnector(auth_url="", tenant="", username="", password="")
 
     def test_create_mock_manager(self):
         factory = self.factory_type(self.mock_connector)
         manager = factory.create()
         self.assertIsInstance(manager, self.manager_type)
         self.assertEqual(self.mock_connector, manager.openstack_connector)
+
+    def test_create_real_manager(self):
+        factory = self.factory_type(self.real_connector)
+        manager = factory.create()
+        self.assertIsInstance(manager, self.manager_type)
+        self.assertEqual(self.real_connector, manager.openstack_connector)
 
 
 class TestOpenstackKeypairManagerFactory(
