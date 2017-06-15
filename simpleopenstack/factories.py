@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TypeVar, Generic, Dict
+from typing import TypeVar, Generic, Dict, Type
 
 from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackItemManager
@@ -14,7 +14,7 @@ _OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=Ope
 
 class _OpenstackFactory(metaclass=ABCMeta):
     """
-    TODO
+    Base class for Openstack factories.
     """
     def __init__(self, openstack_connector: OpenstackConnector):
         """
@@ -30,10 +30,11 @@ class OpenstackItemManagerFactory(Generic[_OpenstackItemManagerType], _Openstack
     """
     @staticmethod
     @abstractmethod
-    def _connector_manager_map() -> Dict[OpenstackConnector, _OpenstackItemManagerType]:
+    def _connector_manager_map() -> Dict[Type[OpenstackConnector], _OpenstackItemManagerType]:
         """
-        TODO
-        :return:
+        Gets the mapping between the Openstack connector type and the manager for that type that will work with the
+        connector.
+        :return: manager for type and connector
         """
 
     def create(self) -> _OpenstackItemManagerType:
