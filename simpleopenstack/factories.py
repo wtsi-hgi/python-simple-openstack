@@ -12,7 +12,7 @@ from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOp
 _OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=OpenstackItemManager)
 
 
-class _OpenstackFactory:
+class _OpenstackFactory(metaclass=ABCMeta):
     """
     TODO
     """
@@ -41,9 +41,9 @@ class OpenstackItemManagerFactory(Generic[_OpenstackItemManagerType], _Openstack
         Creates a manger.
         :return: the created manager
         """
-        if self.openstack_connector not in self._connector_manager_map:
+        if type(self.openstack_connector) not in self._connector_manager_map():
             raise ValueError(f"Unsupported connector: {type(self.openstack_connector)}")
-        return self._connector_manager_map[self.openstack_connector]
+        return self._connector_manager_map()[type(self.openstack_connector)](self.openstack_connector)
 
 
 class OpenstackKeypairManagerFactory(OpenstackItemManagerFactory[OpenstackKeypairManager]):
