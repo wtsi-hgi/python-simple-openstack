@@ -175,7 +175,7 @@ class NovaOpenstackInstanceManager(
             flavor=model.flavor["id"]
         )
 
-    def _delete(self, identifier: OpenstackIdentifier=None):
+    def _delete(self, identifier: OpenstackIdentifier):
         try:
             self._client.servers.force_delete(identifier)
         except ClientException as e:
@@ -256,7 +256,7 @@ class GlanceOpenstackImageManager(
             protected=model.protected
         )
 
-    def _delete(self, identifier: OpenstackIdentifier=None):
+    def _delete(self, identifier: OpenstackIdentifier):
         self._client.images.delete(identifier)
 
     def create(self, model: OpenstackImage) -> OpenstackImage:
