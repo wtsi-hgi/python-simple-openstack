@@ -14,6 +14,12 @@ from simpleopenstack.tests._test_managers import Manager
 ItemManagerFactory = TypeVar("ItemManagerFactory", bound=OpenstackItemManagerFactory)
 
 
+class _BlankOpenstackConnector(OpenstackConnector):
+    """
+    Blank OpenStack connector for use in testing.
+    """
+
+
 class _TestOpenstackItemManagerFactory(Generic[ItemManagerFactory, Manager], unittest.TestCase, metaclass=ABCMeta):
     """
     Tests for `OpenstackItemManagerFactory`.
@@ -49,6 +55,10 @@ class _TestOpenstackItemManagerFactory(Generic[ItemManagerFactory, Manager], uni
         manager = factory.create()
         self.assertIsInstance(manager, self.manager_type)
         self.assertEqual(self.real_connector, manager.openstack_connector)
+
+    def test_create_with_unknown_connector(self):
+        factory = self.factory_type(_BlankOpenstackConnector())
+        self.assertRaises(ValueError, factory.create)
 
 
 class TestOpenstackKeypairManagerFactory(
