@@ -61,8 +61,8 @@ class MockOpenstackItemManager(
         self._get_item_collection().append(created)
         return created
 
-    def _delete(self, item: Managed=None):
-        pass
+    def _delete(self, identifier: OpenstackIdentifier):
+        self._get_item_collection().remove(self.get_by_id(identifier))
 
 
 class MockOpenstackKeypairManager(

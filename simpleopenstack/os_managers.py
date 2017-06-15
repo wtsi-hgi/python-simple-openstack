@@ -131,7 +131,7 @@ class NovaOpenstackKeypairManager(OpenstackKeypairManager[RealOpenstackConnector
             fingerprint=model.fingerprint
         )
 
-    def _delete(self, identifier: OpenstackIdentifier=None):
+    def _delete(self, identifier: OpenstackIdentifier):
         self._client.keypairs.delete(identifier)
 
     def create(self, model: OpenstackKeypair) -> OpenstackKeypair:

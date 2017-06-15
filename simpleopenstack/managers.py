@@ -53,10 +53,10 @@ class OpenstackItemManager(Generic[Managed, Connector], metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def _delete(self, item: Managed=None):
+    def _delete(self, identifier: OpenstackIdentifier):
         """
         Deletes an OpenStack item with the given identifier.
-        :param item: the OpenStack item to delete
+        :param identifier: the identifier of the item to delete
         """
 
     def __init__(self, openstack_connector: Connector):

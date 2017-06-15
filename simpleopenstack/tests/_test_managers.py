@@ -86,6 +86,20 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
             item.identifier = self.manager.create(item).identifier
         self.assertCountEqual(items, self.manager.get_by_name(common_name))
 
+    def test_delete_by_id(self):
+        self.manager.create(self.item)
+        self.item.identifier = self.manager.create(self.item).identifier
+        assert self.item in self.manager.get_all()
+        self.manager.delete(identifier=self.item.identifier)
+        self.assertNotIn(self.item, self.manager.get_all())
+
+    def test_delete_by_item(self):
+        self.manager.create(self.item)
+        self.item.identifier = self.manager.create(self.item).identifier
+        assert self.item in self.manager.get_all()
+        self.manager.delete(item=self.item)
+        self.assertNotIn(self.item, self.manager.get_all())
+
 
     # TODO: Test other properties
 
