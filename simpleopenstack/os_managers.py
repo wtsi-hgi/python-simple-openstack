@@ -12,7 +12,7 @@ from novaclient.v2.keypairs import Keypair
 from novaclient.v2.servers import Server
 
 from simpleopenstack.managers import Managed, RawModel, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager, OpenstackItemManager
+    OpenstackImageManager, OpenstackItemManager, Connector
 from simpleopenstack.models import OpenstackKeypair, OpenstackIdentifier, OpenstackInstance, OpenstackImage, \
     OpenstackConnector, OpenstackItem
 
@@ -23,11 +23,11 @@ class RealOpenstackConnector(OpenstackConnector):
     """
     def __init__(self, auth_url: str, tenant: str, username: str, password: str):
         """
-        TODO
-        :param auth_url:
-        :param tenant:
-        :param username:
-        :param password:
+        Constructor.
+        :param auth_url: the authentication URL of OpenStack.
+        :param tenant: the tenant to connect to
+        :param username: the username
+        :param password: the password
         """
         self.auth_url = auth_url
         self.tenant = tenant
@@ -71,6 +71,10 @@ class _RawModelConvertingManager(
         :return: the domain model equivalent
         """
 
+    def __init__(self, openstack_connector: Connector):
+        super().__init__(openstack_connector)
+        self._cached_client = None
+
     def get_by_id(self, identifier: OpenstackIdentifier) -> Optional[Managed]:
         raw_item = self._get_by_id_raw(identifier)
         if raw_item is None:
@@ -98,17 +102,18 @@ class _NovaManager(Generic[Managed, RawModel], _RawModelConvertingManager[Manage
     """
     NOVA_VERSION = "2"
 
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor.
-        """
-        super().__init__(*args, **kwargs)
-        self._client = NovaClient(_NovaManager.NOVA_VERSION, self.openstack_connector.username,
-                                  self.openstack_connector.password, project_name=self.openstack_connector.tenant,
-                                  auth_url=self.openstack_connector.auth_url)
+    @property
+    def _client(self) -> NovaClient:
+        if self._cached_client is None:
+            self._cached_client = NovaClient(
+                _NovaManager.NOVA_VERSION, self.openstack_connector.username,
+                self.openstack_connector.password, project_name=self.openstack_connector.tenant,
+                auth_url=self.openstack_connector.auth_url)
+        return self._cached_client
 
 
-class NovaOpenstackKeypairManager(OpenstackKeypairManager[RealOpenstackConnector], _NovaManager[OpenstackKeypair, Keypair]):
+class NovaOpenstackKeypairManager(
+        OpenstackKeypairManager[RealOpenstackConnector], _NovaManager[OpenstackKeypair, Keypair]):
     """
     Manager for OpenStack key-pairs.
     """
@@ -138,8 +143,8 @@ class NovaOpenstackKeypairManager(OpenstackKeypairManager[RealOpenstackConnector
         raise NotImplementedError()
 
 
-class NovaOpenstackInstanceManager(OpenstackInstanceManager[RealOpenstackConnector],
-                                   _NovaManager[OpenstackInstance, Server]):
+class NovaOpenstackInstanceManager(
+        OpenstackInstanceManager[RealOpenstackConnector], _NovaManager[OpenstackInstance, Server]):
     """
     Manager for OpenStack instances.
     """
@@ -206,8 +211,8 @@ class NovaOpenstackInstanceManager(OpenstackInstanceManager[RealOpenstackConnect
         # self._client.servers.create(name=model.name, image=image.identifier, flavor=flavor.id, network="123")
 
 
-class GlanceOpenstackImageManager(OpenstackImageManager[RealOpenstackConnector],
-                                  _RawModelConvertingManager[OpenstackImage, Image]):
+class GlanceOpenstackImageManager(
+        OpenstackImageManager[RealOpenstackConnector], _RawModelConvertingManager[OpenstackImage, Image]):
     """
     Manager for OpenStack images.
     """
@@ -217,16 +222,16 @@ class GlanceOpenstackImageManager(OpenstackImageManager[RealOpenstackConnector],
     def item_type(self) -> Type[OpenstackItem]:
         return OpenstackImage
 
-    def __init__(self, *args, **kwargs):
-        """
-        Constructor.
-        """
-        super().__init__(*args, **kwargs)
-        keystone = KeystoneClient(
-            auth_url=self.openstack_connector.auth_url, username=self.openstack_connector.username,
-            password=self.openstack_connector.password, tenant_name=self.openstack_connector.tenant)
-        glance_endpoint = keystone.service_catalog.url_for(service_type="image", endpoint_type="publicURL")
-        self._client = GlanceClient(GlanceOpenstackImageManager.GLANCE_VERSION, glance_endpoint, token=keystone.auth_token)
+    @property
+    def _client(self) -> GlanceClient:
+        if self._cached_client is None:
+            keystone = KeystoneClient(
+                auth_url=self.openstack_connector.auth_url, username=self.openstack_connector.username,
+                password=self.openstack_connector.password, tenant_name=self.openstack_connector.tenant)
+            glance_endpoint = keystone.service_catalog.url_for(service_type="image", endpoint_type="publicURL")
+            self._cached_client = GlanceClient(
+                GlanceOpenstackImageManager.GLANCE_VERSION, glance_endpoint, token=keystone.auth_token)
+        return self._cached_client
 
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Image]:
         try:
