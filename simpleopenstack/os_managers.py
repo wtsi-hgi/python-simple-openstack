@@ -85,7 +85,7 @@ class _RawModelConvertingManager(
 
     def get_by_name(self, name: str) -> List[Managed]:
         items = [self._convert_raw(raw_model) for raw_model in self._get_by_name_raw(name)]
-        assert len({item.name for item in items if item.name == name}) == 1
+        assert len({item.name for item in items if item.name == name}) <= 1
         return items
 
     def get_all(self) -> Set[Managed]:
