@@ -11,7 +11,7 @@ from simpleopenstack.models import OpenstackConnector, OpenstackIdentifier, Open
 
 class MockOpenstack(Model):
     """
-    TODO
+    Mock OpenStack environment.
     """
     def __init__(self):
         self.images: List[OpenstackImage] = []
@@ -21,7 +21,7 @@ class MockOpenstack(Model):
 
 class MockOpenstackConnector(OpenstackConnector):
     """
-    TODO
+    Connector for mock OpenStack environment.
     """
     def __init__(self, mock_openstack: MockOpenstack):
         self.mock_openstack = mock_openstack
@@ -30,13 +30,13 @@ class MockOpenstackConnector(OpenstackConnector):
 class MockOpenstackItemManager(
         Generic[Managed], OpenstackItemManager[Managed, MockOpenstackConnector], metaclass=ABCMeta):
     """
-    TODO
+    Manager of items in mock OpenStack environment.
     """
     @abstractmethod
     def _get_item_collection(self) -> List[Managed]:
         """
-        TODO
-        :return:
+        Gets pointer to item collection that this manager deal with in the mock OpenStack environment.
+        :return: pointer to the item collection (not a copy)
         """
 
     def get_all(self) -> Set[Managed]:

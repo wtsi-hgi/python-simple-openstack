@@ -159,7 +159,7 @@ class NovaOpenstackInstanceManager(
             return None
 
     def _get_by_name_raw(self, name: str) -> Sequence[OpenstackInstance]:
-        return self._client.servers.find(name=name)
+        return self._client.servers.findall(name=name)
 
     def _get_all_raw(self) -> Iterable[Server]:
         return self._client.servers.list()
