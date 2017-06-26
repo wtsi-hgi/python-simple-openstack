@@ -116,6 +116,7 @@ class OpenstackInstanceManager(
         manager_factory = OpenstackManagerFactory(self.openstack_connector)
         ensure_exists(model.image, manager_factory.create_image_manager())
         ensure_exists(model.flavor, manager_factory.create_flavor_manager())
+        ensure_exists(model.key_name, manager_factory.create_keypair_manager())
 
         return self._create(model)
 

@@ -187,18 +187,18 @@ class NovaOpenstackInstanceManager(
             self._client.servers.force_delete(identifier)
 
     def _create(self, model: OpenstackInstance):
-        image = OpenstackImage(model.image)
+        from simpleopenstack.factories import OpenstackManagerFactory
+        manager_factory = OpenstackManagerFactory(self.openstack_connector)
 
+        image_manager = manager_factory.create_image_manager()
+        image_id = (image_manager.get_by_id(model.image) or image_manager.get_by_name(model.image)[0]).identifier
 
-        # # TODO: This hints at the requirement of a flavor manager!
-        # try:
-        #     flavor = self._client.flavors.get(model.flavor)
-        # except NotFound:
-        #     try:
-        #         flavor = self._client.flavors.find(name=model.flavor)
-        #     except NotFound:
-        #         raise ValueError(f"Could not find flavor with ID or name \"{model.flavor}\"")
-        # self._client.servers.create(name=model.name, image=image.identifier, flavor=flavor.id, network="123")
+        flavor_manager = manager_factory.create_flavor_manager()
+        flavor_id = (flavor_manager.get_by_id(model.flavor) or flavor_manager.get_by_name(model.flavor)[0]).identifier
+
+        return self._convert_raw(self._client.servers.create(
+            name=model.name, image=image_id, flavor=flavor_id, key_name=model.key_name,
+            nics=[{"net-id": model.network}]))
 
 
 class GlanceOpenstackImageManager(
@@ -265,11 +265,11 @@ class NovaOpenstackFlavorManager(
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Server]:
         try:
             self._client.flavors.get(identifier)
-        except HTTPNotFound:
+        except NotFound:
             return None
 
     def _get_by_name_raw(self, name: str) -> Sequence[OpenstackFlavor]:
-        return self._client.flavors.find(name=name)
+        return self._client.flavors.findall(name=name)
 
     def _get_all_raw(self) -> Iterable[Server]:
         return self._client.flavors.list()
