@@ -3,6 +3,8 @@ from copy import copy
 from typing import Optional, Set, List, Generic
 from uuid import uuid4
 
+from novaclient.v2.flavors import Flavor
+
 from simpleopenstack.managers import OpenstackKeypairManager, OpenstackInstanceManager, OpenstackImageManager, \
     OpenstackItemManager, Managed, OpenstackFlavorManager
 from simpleopenstack.models import OpenstackConnector, OpenstackIdentifier, OpenstackKeypair, \
@@ -73,6 +75,11 @@ class MockOpenstackKeypairManager(
     """
     def _get_item_collection(self) -> List[OpenstackKeypair]:
         return self.openstack_connector.mock_openstack.keypairs
+
+    def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
+        if len(self.get_by_name(model.name)) >= 1:
+            raise ValueError(f"Keypairs with duplicate names are not allowed in OpenStack: {model.name}")
+        return super().create(model)
 
 
 class MockOpenstackInstanceManager(

@@ -80,21 +80,21 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
 
     def test_get_by_name_when_multiple_with_same_name(self):
         common_name = "same_name"
-        items = {self._create_test_item() for _ in range(3)}  # Ah!  A magic number!
+        items = {self._create_test_item() for _ in range(3)}
         for item in items:
             item.name = common_name
             item.identifier = self.manager.create(item).identifier
         self.assertCountEqual(items, self.manager.get_by_name(common_name))
 
     def test_delete_by_id(self):
-        self.manager.create(self.item)
+        self.manager.create(self._create_test_item())
         self.item.identifier = self.manager.create(self.item).identifier
         assert self.item in self.manager.get_all()
         self.manager.delete(identifier=self.item.identifier)
         self.assertNotIn(self.item, self.manager.get_all())
 
     def test_delete_by_item(self):
-        self.manager.create(self.item)
+        self.manager.create(self._create_test_item())
         self.item.identifier = self.manager.create(self.item).identifier
         assert self.item in self.manager.get_all()
         self.manager.delete(item=self.item)
@@ -107,7 +107,21 @@ class OpenstackKeypairManagerTest(
     Tests for `OpenstackKeypairManagerTest`.
     """
     def _create_test_item(self) -> OpenstackKeypair:
-        return OpenstackKeypair(name=f"example-keypair-{self.item_count}")
+        return OpenstackKeypair(
+            name=f"example-keypair-{self.item_count}",
+            public_key="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmEmDTNBC6O8H"
+                       "GCdu0MZ9zLCivDsYSttrrmlq87/YsEBpvwUTiF3UEQuFLaq5Gm+dtgxJewg/UwsZrDFxz"
+                       "pQhCHB6VmqrbKN2hEIkk/HJvCnAmR1ehXv8n2BWw3Jlw7Z+VgWwXAH50f2HWYqTaE4qP4" 
+                       "Dxc4RlElxgNmlDPGXw/dYBvChYBG/RvIiTz1L+pYzPD4JR54IMmTOwjcGIJl7nk1VjKvl" 
+                       "3D8Wgp6qejv4MfZ7Htdc99SUKcKWAeHYsjPXosSk3GlwKiS/sZi51Yca394GE7T4hZu6H"
+                       "TaXeZoD8+IZ7AijYn89H7EPjuu0iCAa/cjVzBsFHGszQYG+U5KfIw== user@host"
+        )
+
+    # Keypairs are different in that their names are unique
+    def test_get_by_name_when_multiple_with_same_name(self):
+        item = self._create_test_item()
+        self.manager.create(item)
+        self.assertRaises(ValueError, self.manager.create, item)
 
 
 class OpenstackInstanceManagerTest(

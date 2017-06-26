@@ -2,6 +2,8 @@ from abc import ABCMeta
 from datetime import datetime
 from typing import NewType, Set, Optional
 
+from sshpubkeys import SSHKey
+
 OpenstackIdentifier = NewType("OpenstackIdentifier", str)
 
 
@@ -64,9 +66,43 @@ class OpenstackKeypair(OpenstackItem):
     """
     A key-pair in OpenStack.
     """
-    def __init__(self, fingerprint: str=None, **kwargs):
+    @staticmethod
+    def _generate_fingerprint(public_key: str) -> str:
+        """
+        Generates the fingerprint for the given public key.
+        :param public_key: the public key
+        :return: the fingerprint
+        """
+        return SSHKey(public_key).hash_md5().strip("MD5:")
+
+    @property
+    def public_key(self) -> Optional[str]:
+        return self._public_key
+
+    @property
+    def fingerprint(self) -> Optional[str]:
+        return self._fingerprint
+
+    @public_key.setter
+    def public_key(self, public_key: Optional[str]):
+        self._public_key = public_key
+        self._fingerprint = OpenstackKeypair._generate_fingerprint(public_key) if public_key is not None else None
+
+    @fingerprint.setter
+    def fingerprint(self, fingerprint: Optional[str]):
+        if self._public_key is not None:
+            expected = OpenstackKeypair._generate_fingerprint(self._public_key)
+            if fingerprint != expected:
+                raise ValueError(f"The given fingerprint \"{self.fingerprint}\" does not match that for the currently "
+                                 f"set public key \"{self.public_key}\" (expecting \"{expected}\")")
+        self._fingerprint = fingerprint
+
+    def __init__(self, fingerprint: str=None, public_key: str=None, **kwargs):
         super().__init__(**kwargs)
+        self._fingerprint = None
+        self._public_key = None
         self.fingerprint = fingerprint
+        self.public_key = public_key
 
 
 class OpenstackInstance(OpenstackItem, Timestamped):

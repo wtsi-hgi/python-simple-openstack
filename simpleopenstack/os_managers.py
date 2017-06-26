@@ -6,7 +6,7 @@ from glanceclient.client import Client as GlanceClient
 from glanceclient.exc import HTTPNotFound
 from keystoneclient.v2_0 import Client as KeystoneClient
 from novaclient.client import Client as NovaClient
-from novaclient.exceptions import ClientException
+from novaclient.exceptions import ClientException, NotFound
 from novaclient.v2.flavors import Flavor
 from novaclient.v2.images import Image
 from novaclient.v2.keypairs import Keypair
@@ -121,11 +121,11 @@ class NovaOpenstackKeypairManager(
     def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Keypair]:
         try:
             return self._client.keypairs.get(identifier)
-        except HTTPNotFound:
+        except NotFound:
             return None
 
     def _get_by_name_raw(self, name: str) -> Sequence[OpenstackKeypair]:
-        return self._client.keypairs.find(name=name)
+        return self._client.keypairs.findall(name=name)
 
     def _get_all_raw(self) -> Iterable[Keypair]:
         return self._client.keypairs.list()
@@ -134,14 +134,15 @@ class NovaOpenstackKeypairManager(
         return OpenstackKeypair(
             identifier=model.name,
             name=model.name,
-            fingerprint=model.fingerprint
+            fingerprint=model.fingerprint,
+            public_key=model.public_key
         )
 
     def _delete(self, identifier: OpenstackIdentifier):
         self._client.keypairs.delete(identifier)
 
     def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
-        raise NotImplementedError()
+        return self._convert_raw(self._client.keypairs.create(name=model.name, public_key=model.public_key))
 
 
 class NovaOpenstackInstanceManager(
