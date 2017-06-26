@@ -97,9 +97,27 @@ class OpenstackInstanceManager(
     """
     Manager of instances.
     """
+    @abstractmethod
+    def _create(self, model: OpenstackInstance) -> OpenstackInstance:
+        """
+        TODO
+        :param model:
+        :return:
+        """
+
     @property
     def item_type(self) -> Type[OpenstackInstance]:
         return OpenstackInstance
+
+    def create(self, model: OpenstackInstance):
+        from simpleopenstack.common import ensure_exists
+        from simpleopenstack.factories import OpenstackManagerFactory
+
+        manager_factory = OpenstackManagerFactory(self.openstack_connector)
+        ensure_exists(model.image, manager_factory.create_image_manager())
+        ensure_exists(model.flavor, manager_factory.create_flavor_manager())
+
+        return self._create(model)
 
 
 class OpenstackImageManager(

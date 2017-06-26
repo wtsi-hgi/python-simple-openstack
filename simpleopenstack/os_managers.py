@@ -186,22 +186,10 @@ class NovaOpenstackInstanceManager(
             self._client.servers.reset_state(identifier)
             self._client.servers.force_delete(identifier)
 
-    def create(self, model: OpenstackInstance):
-        raise NotImplementedError()
-        # if model.identifier is not None:
-        #     raise ValueError(f"Cannot create an instance with a particular identifier (\"{model.identifier}\" given)")
-        #
-        # image_manager = GlanceOpenstackImageManager(self.openstack_credentials)
-        # image = image_manager.get_by_id(model.image)
-        # if image is None:
-        #     images = image_manager.get_by_name(model.image)
-        #     if len(images) > 1:
-        #         raise ValueError(f"There is more than one image with the name \"{model.name}\" - please refer to the "
-        #                          f"required image by ID to resolve the ambiguity")
-        #     elif len(images) == 0:
-        #         raise ValueError(f"No image with ID or name \"{model.image}\" found")
-        #     image = images[0]
-        #
+    def _create(self, model: OpenstackInstance):
+        image = OpenstackImage(model.image)
+
+
         # # TODO: This hints at the requirement of a flavor manager!
         # try:
         #     flavor = self._client.flavors.get(model.flavor)

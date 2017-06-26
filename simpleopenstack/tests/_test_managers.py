@@ -4,6 +4,7 @@ from copy import copy
 from threading import Lock
 from typing import Generic, TypeVar
 
+from simpleopenstack.factories import OpenstackManagerFactory
 from simpleopenstack.managers import Managed, OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackImageManager, OpenstackFlavorManager
 from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage, OpenstackFlavor
@@ -17,27 +18,27 @@ FlavorManager = TypeVar("FlavorManager", bound=OpenstackFlavorManager)
 
 class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, metaclass=ABCMeta):
     """
-    TODO
+    Tests for `OpenstackItemManager`.
     """
     @abstractmethod
     def _create_test_item(self) -> Managed:
         """
-        TODO
-        :return:
+        Creates an item that can be managed by the manager under test.
+        :return: the OpenStack item
         """
 
     @abstractmethod
     def _create_manager(self) -> Manager:
         """
-        TODO
-        :return:
+        Creates a manager of the type that is under test.
+        :return: the created manager
         """
 
     @property
     def item_count(self) -> int:
         """
-        TODO
-        :return:
+        Gets the number of test items that have been created and increments the counter by one.
+        :return: the number of test itmes that have been created
         """
         with self._item_counter_lock:
             count = self._item_counter
@@ -129,8 +130,23 @@ class OpenstackInstanceManagerTest(
     """
     Test for `OpenstackInstanceManagerTest`.
     """
+    _EXAMPLE_IMAGE = "Ubuntu Xenial"
+    _EXAMPLE_FLAVOR = "m1.tiny"
+
     def _create_test_item(self) -> OpenstackInstance:
-        return OpenstackInstance(name=f"example-instance-{self.item_count}")
+        manager_factory = OpenstackManagerFactory(self.manager.openstack_connector)
+
+        image_manager = manager_factory.create_image_manager()
+        if len(image_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_IMAGE)) == 0:
+            image_manager.create(OpenstackImage(name=OpenstackInstanceManagerTest._EXAMPLE_IMAGE))
+
+        flavor_manager = manager_factory.create_flavor_manager()
+        if len(flavor_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_FLAVOR)) == 0:
+            flavor_manager.create(OpenstackFlavor(name=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR))
+
+        return OpenstackInstance(name=f"example-instance-{self.item_count}",
+                                 image=OpenstackInstanceManagerTest._EXAMPLE_IMAGE,
+                                 flavor=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR)
 
 
 class OpenstackImageManagerTest(

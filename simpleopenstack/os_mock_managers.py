@@ -73,13 +73,13 @@ class MockOpenstackKeypairManager(
     """
     Mock key-pair manager.
     """
-    def _get_item_collection(self) -> List[OpenstackKeypair]:
-        return self.openstack_connector.mock_openstack.keypairs
-
     def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
         if len(self.get_by_name(model.name)) >= 1:
             raise ValueError(f"Keypairs with duplicate names are not allowed in OpenStack: {model.name}")
         return super().create(model)
+
+    def _get_item_collection(self) -> List[OpenstackKeypair]:
+        return self.openstack_connector.mock_openstack.keypairs
 
 
 class MockOpenstackInstanceManager(
@@ -87,6 +87,13 @@ class MockOpenstackInstanceManager(
     """
     Mock instance manager.
     """
+    # Not using override in MockOpenstackItemManager
+    def create(self, model: OpenstackInstance) -> OpenstackInstance:
+        return OpenstackInstanceManager.create(self, model)
+
+    def _create(self, model: OpenstackInstance) -> OpenstackInstance:
+        return MockOpenstackItemManager.create(self, model)
+
     def _get_item_collection(self) -> List[OpenstackInstance]:
         return self.openstack_connector.mock_openstack.instances
 
