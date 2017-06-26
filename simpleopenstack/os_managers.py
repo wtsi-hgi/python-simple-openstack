@@ -262,7 +262,7 @@ class GlanceOpenstackImageManager(
         self._client.images.delete(identifier)
 
     def create(self, model: OpenstackImage) -> OpenstackImage:
-        raise NotImplementedError()
+        return self._convert_raw(self._client.images.create(name=model.name))
 
 
 class NovaOpenstackFlavorManager(
