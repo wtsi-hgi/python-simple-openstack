@@ -7,14 +7,15 @@ from glanceclient.exc import HTTPNotFound
 from keystoneclient.v2_0 import Client as KeystoneClient
 from novaclient.client import Client as NovaClient
 from novaclient.exceptions import ClientException
+from novaclient.v2.flavors import Flavor
 from novaclient.v2.images import Image
 from novaclient.v2.keypairs import Keypair
 from novaclient.v2.servers import Server
 
 from simpleopenstack.managers import Managed, RawModel, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager, OpenstackItemManager, Connector
+    OpenstackImageManager, OpenstackItemManager, Connector, OpenstackFlavorManager
 from simpleopenstack.models import OpenstackKeypair, OpenstackIdentifier, OpenstackInstance, OpenstackImage, \
-    OpenstackConnector, OpenstackItem
+    OpenstackConnector, OpenstackItem, OpenstackFlavor
 
 
 class RealOpenstackConnector(OpenstackConnector):
@@ -260,4 +261,44 @@ class GlanceOpenstackImageManager(
         self._client.images.delete(identifier)
 
     def create(self, model: OpenstackImage) -> OpenstackImage:
+        raise NotImplementedError()
+
+
+class NovaOpenstackFlavorManager(
+        OpenstackFlavorManager[RealOpenstackConnector], _NovaManager[OpenstackFlavor, Flavor]):
+    """
+    Manager for OpenStack image flavours.
+    """
+    @property
+    def item_type(self) -> Type[OpenstackItem]:
+        return OpenstackFlavor
+
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Server]:
+        try:
+            self._client.flavors.get(identifier)
+        except HTTPNotFound:
+            return None
+
+    def _get_by_name_raw(self, name: str) -> Sequence[OpenstackFlavor]:
+        return self._client.flavors.find(name=name)
+
+    def _get_all_raw(self) -> Iterable[Server]:
+        return self._client.flavors.list()
+
+    def _convert_raw(self, model: Flavor) -> OpenstackFlavor:
+        return OpenstackFlavor(
+            identifier=model.id,
+            name=model.name
+        )
+
+    def _delete(self, identifier: OpenstackIdentifier):
+        try:
+            self._client.servers.force_delete(identifier)
+        except ClientException as e:
+            if "nova.exception.InstanceInvalidState" not in e.message:
+                raise e
+            self._client.servers.reset_state(identifier)
+            self._client.servers.force_delete(identifier)
+
+    def create(self, model: OpenstackFlavor):
         raise NotImplementedError()

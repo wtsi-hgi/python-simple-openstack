@@ -3,9 +3,10 @@ from abc import ABCMeta, abstractmethod
 from typing import Type, Generic, TypeVar
 
 from simpleopenstack.factories import OpenstackKeypairManagerFactory, OpenstackItemManagerFactory, \
-    OpenstackInstanceManagerFactory, OpenstackImageManagerFactory, OpenstackManagerFactory
+    OpenstackInstanceManagerFactory, OpenstackImageManagerFactory, OpenstackManagerFactory, \
+    OpenstackFlavorManagerFactory
 from simpleopenstack.managers import OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager
+    OpenstackImageManager, OpenstackFlavorManager
 from simpleopenstack.models import OpenstackConnector
 from simpleopenstack.os_managers import RealOpenstackConnector
 from simpleopenstack.os_mock_managers import MockOpenstackConnector, MockOpenstack
@@ -103,6 +104,20 @@ class TestOpenstackImageManagerFactory(
         return OpenstackImageManager
 
 
+class TestOpenstackFlavorManagerFactory(
+        _TestOpenstackItemManagerFactory[OpenstackFlavorManagerFactory, OpenstackFlavorManager]):
+    """
+    Tests for `OpenstackFlavorManagerFactory`.
+    """
+    @property
+    def factory_type(self) -> Type[OpenstackFlavorManagerFactory]:
+        return OpenstackFlavorManagerFactory
+
+    @property
+    def manager_type(self) -> Type[OpenstackFlavorManager]:
+        return OpenstackFlavorManager
+
+
 class TestOpenstackManagerFactory(unittest.TestCase):
     """
     Tests for `OpenstackManagerFactory`.
@@ -124,6 +139,11 @@ class TestOpenstackManagerFactory(unittest.TestCase):
     def test_create_image_manager(self):
         manager = self.factory.create_image_manager()
         self.assertIsInstance(manager, OpenstackImageManager)
+        self.assertEqual(self.mock_connector, manager.openstack_connector)
+
+    def test_create_flavor_manager(self):
+        manager = self.factory.create_flavor_manager()
+        self.assertIsInstance(manager, OpenstackFlavorManager)
         self.assertEqual(self.mock_connector, manager.openstack_connector)
 
 

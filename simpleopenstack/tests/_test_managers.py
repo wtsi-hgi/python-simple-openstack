@@ -5,14 +5,14 @@ from threading import Lock
 from typing import Generic, TypeVar
 
 from simpleopenstack.managers import Managed, OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager
-from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage
-from simpleopenstack.os_mock_managers import MockOpenstack, MockOpenstackConnector
+    OpenstackImageManager, OpenstackFlavorManager
+from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage, OpenstackFlavor
 
 Manager = TypeVar("Manager", bound=OpenstackItemManager)
 KeypairManager = TypeVar("KeypairManager", bound=OpenstackKeypairManager)
 InstanceManager = TypeVar("InstanceManager", bound=OpenstackInstanceManager)
 ImageManager = TypeVar("ImageManager", bound=OpenstackImageManager)
+FlavorManager = TypeVar("FlavorManager", bound=OpenstackFlavorManager)
 
 
 class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, metaclass=ABCMeta):
@@ -101,32 +101,17 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
         self.assertNotIn(self.item, self.manager.get_all())
 
 
-    # TODO: Test other properties
-
-
-class _MockOpenstackItemManagerTest(unittest.TestCase, metaclass=ABCMeta):
-    """
-    TODO
-    """
-    def setUp(self):
-        self._mock_openstack = MockOpenstack()
-        self.openstack_connector = MockOpenstackConnector(self._mock_openstack)
-        super().setUp()
-
-
 class OpenstackKeypairManagerTest(
-        Generic[KeypairManager], _MockOpenstackItemManagerTest,
-        OpenstackItemManagerTest[KeypairManager, OpenstackKeypair], metaclass=ABCMeta):
+        Generic[KeypairManager], OpenstackItemManagerTest[KeypairManager, OpenstackKeypair], metaclass=ABCMeta):
     """
-    Tests for `OpenstackItemManagerTest`.
+    Tests for `OpenstackKeypairManagerTest`.
     """
     def _create_test_item(self) -> OpenstackKeypair:
         return OpenstackKeypair(name=f"example-keypair-{self.item_count}")
 
 
 class OpenstackInstanceManagerTest(
-        Generic[InstanceManager], _MockOpenstackItemManagerTest,
-        OpenstackItemManagerTest[InstanceManager, OpenstackInstance], metaclass=ABCMeta):
+        Generic[InstanceManager], OpenstackItemManagerTest[InstanceManager, OpenstackInstance], metaclass=ABCMeta):
     """
     Test for `OpenstackInstanceManagerTest`.
     """
@@ -135,13 +120,18 @@ class OpenstackInstanceManagerTest(
 
 
 class OpenstackImageManagerTest(
-        Generic[ImageManager], _MockOpenstackItemManagerTest,
-        OpenstackItemManagerTest[ImageManager, OpenstackImage], metaclass=ABCMeta):
+        Generic[ImageManager], OpenstackItemManagerTest[ImageManager, OpenstackImage], metaclass=ABCMeta):
     """
-    Test for `OpenstackInstanceManagerTest`.
+    Test for `OpenstackImageManagerTest`.
     """
     def _create_test_item(self) -> OpenstackImage:
         return OpenstackImage(name=f"example-image-{self.item_count}")
 
 
-del _MockOpenstackItemManagerTest
+class OpenstackFlavorManagerTest(
+        Generic[FlavorManager], OpenstackItemManagerTest[FlavorManager, OpenstackFlavor], metaclass=ABCMeta):
+    """
+    Test for `OpenstackFlavorManagerTest`.
+    """
+    def _create_test_item(self) -> OpenstackFlavor:
+        return OpenstackFlavor(name=f"example-flavor-{self.item_count}")

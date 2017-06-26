@@ -4,9 +4,9 @@ from typing import Optional, Set, List, Generic
 from uuid import uuid4
 
 from simpleopenstack.managers import OpenstackKeypairManager, OpenstackInstanceManager, OpenstackImageManager, \
-    OpenstackItemManager, Managed
+    OpenstackItemManager, Managed, OpenstackFlavorManager
 from simpleopenstack.models import OpenstackConnector, OpenstackIdentifier, OpenstackKeypair, \
-    OpenstackImage, OpenstackInstance, Model
+    OpenstackImage, OpenstackInstance, Model, OpenstackFlavor
 
 
 class MockOpenstack(Model):
@@ -17,6 +17,7 @@ class MockOpenstack(Model):
         self.images: List[OpenstackImage] = []
         self.instances: List[OpenstackInstance] = []
         self.keypairs: List[OpenstackKeypair] = []
+        self.flavors: List[OpenstackFlavor] = []
 
 
 class MockOpenstackConnector(OpenstackConnector):
@@ -92,3 +93,10 @@ class MockOpenstackImageManager(
         return self.openstack_connector.mock_openstack.images
 
 
+class MockOpenstackFlavorManager(
+        MockOpenstackItemManager[OpenstackFlavor], OpenstackFlavorManager[MockOpenstackConnector]):
+    """
+    Mock image flavour manager.
+    """
+    def _get_item_collection(self) -> List[OpenstackFlavor]:
+        return self.openstack_connector.mock_openstack.flavors

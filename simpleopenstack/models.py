@@ -87,3 +87,11 @@ class OpenstackImage(OpenstackItem, Timestamped):
     def __init__(self, protected: bool=None, **kwargs):
         super().__init__(**kwargs)
         self.protected = protected
+
+
+class OpenstackFlavor(OpenstackItem):
+    """
+    An OpenStack image flavour.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

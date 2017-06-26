@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Set, Type, Optional, List
 
 from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, OpenstackImage, \
-    OpenstackIdentifier, OpenstackConnector
+    OpenstackIdentifier, OpenstackConnector, OpenstackFlavor
 
 Managed = TypeVar("Managed", bound=OpenstackItem)
 RawModel = TypeVar("RawModel")
@@ -110,3 +110,13 @@ class OpenstackImageManager(
     @property
     def item_type(self) -> Type[OpenstackImage]:
         return OpenstackImage
+
+
+class OpenstackFlavorManager(
+        Generic[Connector], OpenstackItemManager[OpenstackFlavor, Connector], metaclass=ABCMeta):
+    """
+    Manager of image flavors.
+    """
+    @property
+    def item_type(self) -> Type[OpenstackFlavor]:
+        return OpenstackFlavor

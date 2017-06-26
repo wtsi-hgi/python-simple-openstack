@@ -2,12 +2,12 @@ from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Dict, Type
 
 from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackItemManager
+    OpenstackItemManager, OpenstackFlavorManager
 from simpleopenstack.models import OpenstackConnector
 from simpleopenstack.os_managers import GlanceOpenstackImageManager, NovaOpenstackKeypairManager, \
-    NovaOpenstackInstanceManager, RealOpenstackConnector
+    NovaOpenstackInstanceManager, RealOpenstackConnector, NovaOpenstackFlavorManager
 from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackInstanceManager, \
-    MockOpenstackImageManager, MockOpenstackConnector
+    MockOpenstackImageManager, MockOpenstackConnector, MockOpenstackFlavorManager
 
 _OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=OpenstackItemManager)
 
@@ -83,6 +83,18 @@ class OpenstackImageManagerFactory(OpenstackItemManagerFactory[OpenstackImageMan
         }
 
 
+class OpenstackFlavorManagerFactory(OpenstackItemManagerFactory[OpenstackFlavorManager]):
+    """
+    Factory for Openstack flavour managers.
+    """
+    @staticmethod
+    def _connector_manager_map():
+        return {
+            RealOpenstackConnector: NovaOpenstackFlavorManager,
+            MockOpenstackConnector: MockOpenstackFlavorManager
+        }
+
+
 class OpenstackManagerFactory(_OpenstackFactory):
     """
     Factory for creating Openstack managers for different types of Openstack items.
@@ -95,3 +107,7 @@ class OpenstackManagerFactory(_OpenstackFactory):
 
     def create_image_manager(self) -> OpenstackImageManager:
         return OpenstackImageManagerFactory(self.openstack_connector).create()
+
+    def create_flavor_manager(self) -> OpenstackFlavorManager:
+        return OpenstackFlavorManagerFactory(self.openstack_connector).create()
+
