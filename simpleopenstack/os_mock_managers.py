@@ -6,9 +6,9 @@ from uuid import uuid4
 from novaclient.v2.flavors import Flavor
 
 from simpleopenstack.managers import OpenstackKeypairManager, OpenstackInstanceManager, OpenstackImageManager, \
-    OpenstackItemManager, Managed, OpenstackFlavorManager
+    OpenstackItemManager, Managed, OpenstackFlavorManager, OpenstackNetworkManager
 from simpleopenstack.models import OpenstackConnector, OpenstackIdentifier, OpenstackKeypair, \
-    OpenstackImage, OpenstackInstance, Model, OpenstackFlavor
+    OpenstackImage, OpenstackInstance, Model, OpenstackFlavor, OpenstackNetwork
 
 
 class MockOpenstack(Model):
@@ -20,6 +20,7 @@ class MockOpenstack(Model):
         self.instances: List[OpenstackInstance] = []
         self.keypairs: List[OpenstackKeypair] = []
         self.flavors: List[OpenstackFlavor] = []
+        self.networks: List[OpenstackNetwork] = []
 
 
 class MockOpenstackConnector(OpenstackConnector):
@@ -114,3 +115,12 @@ class MockOpenstackFlavorManager(
     """
     def _get_item_collection(self) -> List[OpenstackFlavor]:
         return self.openstack_connector.mock_openstack.flavors
+
+
+class MockOpenstackNetworkManager(
+        MockOpenstackItemManager[OpenstackNetwork], OpenstackNetworkManager[MockOpenstackConnector]):
+    """
+    Mock image flavour manager.
+    """
+    def _get_item_collection(self) -> List[OpenstackNetwork]:
+        return self.openstack_connector.mock_openstack.networks

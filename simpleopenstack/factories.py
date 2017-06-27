@@ -2,12 +2,12 @@ from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Dict, Type
 
 from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackItemManager, OpenstackFlavorManager
+    OpenstackItemManager, OpenstackFlavorManager, OpenstackNetworkManager
 from simpleopenstack.models import OpenstackConnector
 from simpleopenstack.os_managers import GlanceOpenstackImageManager, NovaOpenstackKeypairManager, \
-    NovaOpenstackInstanceManager, RealOpenstackConnector, NovaOpenstackFlavorManager
+    NovaOpenstackInstanceManager, RealOpenstackConnector, NovaOpenstackFlavorManager, NovaOpenstackNetworkManager
 from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackInstanceManager, \
-    MockOpenstackImageManager, MockOpenstackConnector, MockOpenstackFlavorManager
+    MockOpenstackImageManager, MockOpenstackConnector, MockOpenstackFlavorManager, MockOpenstackNetworkManager
 
 _OpenstackItemManagerType = TypeVar("OpenstackItemFactoryProductType", bound=OpenstackItemManager)
 
@@ -95,6 +95,18 @@ class OpenstackFlavorManagerFactory(OpenstackItemManagerFactory[OpenstackFlavorM
         }
 
 
+class OpenstackNetworkManagerFactory(OpenstackItemManagerFactory[OpenstackNetworkManager]):
+    """
+    Factory for Openstack network managers.
+    """
+    @staticmethod
+    def _connector_manager_map():
+        return {
+            RealOpenstackConnector: NovaOpenstackNetworkManager,
+            MockOpenstackConnector: MockOpenstackNetworkManager
+        }
+
+
 class OpenstackManagerFactory(_OpenstackFactory):
     """
     Factory for creating Openstack managers for different types of Openstack items.
@@ -110,4 +122,7 @@ class OpenstackManagerFactory(_OpenstackFactory):
 
     def create_flavor_manager(self) -> OpenstackFlavorManager:
         return OpenstackFlavorManagerFactory(self.openstack_connector).create()
+
+    def create_network_manager(self) -> OpenstackNetworkManager:
+        return OpenstackNetworkManagerFactory(self.openstack_connector).create()
 

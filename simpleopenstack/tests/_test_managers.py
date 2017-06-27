@@ -6,14 +6,16 @@ from typing import Generic, TypeVar
 
 from simpleopenstack.factories import OpenstackManagerFactory
 from simpleopenstack.managers import Managed, OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager, OpenstackFlavorManager
-from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage, OpenstackFlavor
+    OpenstackImageManager, OpenstackFlavorManager, OpenstackNetworkManager
+from simpleopenstack.models import OpenstackKeypair, OpenstackInstance, OpenstackImage, OpenstackFlavor, \
+    OpenstackNetwork
 
 Manager = TypeVar("Manager", bound=OpenstackItemManager)
 KeypairManager = TypeVar("KeypairManager", bound=OpenstackKeypairManager)
 InstanceManager = TypeVar("InstanceManager", bound=OpenstackInstanceManager)
 ImageManager = TypeVar("ImageManager", bound=OpenstackImageManager)
 FlavorManager = TypeVar("FlavorManager", bound=OpenstackFlavorManager)
+NetworkManager = TypeVar("NetworkManager", bound=OpenstackNetworkManager)
 
 
 class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, metaclass=ABCMeta):
@@ -105,7 +107,7 @@ class OpenstackItemManagerTest(Generic[Manager, Managed], unittest.TestCase, met
 class OpenstackKeypairManagerTest(
         Generic[KeypairManager], OpenstackItemManagerTest[KeypairManager, OpenstackKeypair], metaclass=ABCMeta):
     """
-    Tests for `OpenstackKeypairManagerTest`.
+    Tests for `OpenstackKeypairManager`.
     """
     def _create_test_item(self) -> OpenstackKeypair:
         return OpenstackKeypair(
@@ -128,10 +130,11 @@ class OpenstackKeypairManagerTest(
 class OpenstackInstanceManagerTest(
         Generic[InstanceManager], OpenstackItemManagerTest[InstanceManager, OpenstackInstance], metaclass=ABCMeta):
     """
-    Test for `OpenstackInstanceManagerTest`.
+    Test for `OpenstackInstanceManager`.
     """
     _EXAMPLE_IMAGE = "Ubuntu Xenial"
     _EXAMPLE_FLAVOR = "m1.tiny"
+    _EXAMPLE_KEY = "test-key"
 
     def _create_test_item(self) -> OpenstackInstance:
         manager_factory = OpenstackManagerFactory(self.manager.openstack_connector)
@@ -144,15 +147,20 @@ class OpenstackInstanceManagerTest(
         if len(flavor_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_FLAVOR)) == 0:
             flavor_manager.create(OpenstackFlavor(name=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR))
 
+        keypair_manager = manager_factory.create_keypair_manager()
+        if len(keypair_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_KEY)) == 0:
+            keypair_manager.create(OpenstackKeypair(name=OpenstackInstanceManagerTest._EXAMPLE_KEY))
+
         return OpenstackInstance(name=f"example-instance-{self.item_count}",
                                  image=OpenstackInstanceManagerTest._EXAMPLE_IMAGE,
-                                 flavor=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR)
+                                 flavor=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR,
+                                 key_name=OpenstackInstanceManagerTest._EXAMPLE_KEY)
 
 
 class OpenstackImageManagerTest(
         Generic[ImageManager], OpenstackItemManagerTest[ImageManager, OpenstackImage], metaclass=ABCMeta):
     """
-    Test for `OpenstackImageManagerTest`.
+    Test for `OpenstackImageManager`.
     """
     def _create_test_item(self) -> OpenstackImage:
         return OpenstackImage(name=f"example-image-{self.item_count}")
@@ -161,7 +169,16 @@ class OpenstackImageManagerTest(
 class OpenstackFlavorManagerTest(
         Generic[FlavorManager], OpenstackItemManagerTest[FlavorManager, OpenstackFlavor], metaclass=ABCMeta):
     """
-    Test for `OpenstackFlavorManagerTest`.
+    Test for `OpenstackFlavorManager`.
     """
     def _create_test_item(self) -> OpenstackFlavor:
         return OpenstackFlavor(name=f"example-flavor-{self.item_count}")
+
+
+class OpenstackNetworkManagerTest(
+        Generic[NetworkManager], OpenstackItemManagerTest[NetworkManager, OpenstackNetwork], metaclass=ABCMeta):
+    """
+    Test for `OpenstackNetworkManager`.
+    """
+    def _create_test_item(self) -> OpenstackNetwork:
+        return OpenstackNetwork(name=f"example-network-{self.item_count}")
