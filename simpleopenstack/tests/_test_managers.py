@@ -2,8 +2,10 @@ import unittest
 from abc import ABCMeta, abstractmethod
 from copy import copy
 from threading import Lock
+from types import SimpleNamespace
 from typing import Generic, TypeVar
 
+from simpleopenstack.common import raise_if_absent, get_identifier
 from simpleopenstack.factories import OpenstackManagerFactory
 from simpleopenstack.managers import Managed, OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackImageManager, OpenstackFlavorManager, OpenstackNetworkManager
@@ -135,26 +137,30 @@ class OpenstackInstanceManagerTest(
     _EXAMPLE_IMAGE = "Ubuntu Xenial"
     _EXAMPLE_FLAVOR = "m1.tiny"
     _EXAMPLE_KEY = "test-key"
+    _EXAMPLE_NETWORK = "test-network"
 
     def _create_test_item(self) -> OpenstackInstance:
+        prerequisites = {
+            OpenstackImage: SimpleNamespace(name=OpenstackInstanceManagerTest._EXAMPLE_IMAGE),
+            OpenstackFlavor: SimpleNamespace(name=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR),
+            OpenstackKeypair: SimpleNamespace(name=OpenstackInstanceManagerTest._EXAMPLE_KEY),
+            OpenstackNetwork: SimpleNamespace(name=OpenstackInstanceManagerTest._EXAMPLE_NETWORK)
+        }
+
+        # Creates prerequisites
         manager_factory = OpenstackManagerFactory(self.manager.openstack_connector)
-
-        image_manager = manager_factory.create_image_manager()
-        if len(image_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_IMAGE)) == 0:
-            image_manager.create(OpenstackImage(name=OpenstackInstanceManagerTest._EXAMPLE_IMAGE))
-
-        flavor_manager = manager_factory.create_flavor_manager()
-        if len(flavor_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_FLAVOR)) == 0:
-            flavor_manager.create(OpenstackFlavor(name=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR))
-
-        keypair_manager = manager_factory.create_keypair_manager()
-        if len(keypair_manager.get_by_name(OpenstackInstanceManagerTest._EXAMPLE_KEY)) == 0:
-            keypair_manager.create(OpenstackKeypair(name=OpenstackInstanceManagerTest._EXAMPLE_KEY))
+        for item_type, data in prerequisites.items():
+            assert hasattr(data, "name")
+            manager = manager_factory.create_for_managing(item_type)
+            if len(manager.get_by_name(data.name)) == 0:
+                manager.create(item_type(**vars(data)))
+            assert raise_if_absent(data.name, manager)
 
         return OpenstackInstance(name=f"example-instance-{self.item_count}",
                                  image=OpenstackInstanceManagerTest._EXAMPLE_IMAGE,
                                  flavor=OpenstackInstanceManagerTest._EXAMPLE_FLAVOR,
-                                 key_name=OpenstackInstanceManagerTest._EXAMPLE_KEY)
+                                 key_name=OpenstackInstanceManagerTest._EXAMPLE_KEY,
+                                 networks=[OpenstackInstanceManagerTest._EXAMPLE_NETWORK])
 
 
 class OpenstackImageManagerTest(

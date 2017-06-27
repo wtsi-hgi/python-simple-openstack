@@ -203,11 +203,15 @@ class NovaOpenstackInstanceManager(
         flavor_manager = manager_factory.create_flavor_manager()
         flavor_id = (flavor_manager.get_by_id(model.flavor) or flavor_manager.get_by_name(model.flavor)[0]).identifier
 
-
+        network_manager = manager_factory.create_network_manager()
+        network_ids = []
+        for network in model.networks:
+            network_ids.append(
+                (network_manager.get_by_id(network) or network_manager.get_by_name(network)[0]).identifier)
 
         return self._convert_raw(self._client.servers.create(
             name=model.name, image=image_id, flavor=flavor_id, key_name=model.key_name,
-            nics=[{"net-id": model.networks}]))
+            nics=[{"net-id": network for network in network_ids}]))
 
 
 class NovaOpenstackFlavorManager(

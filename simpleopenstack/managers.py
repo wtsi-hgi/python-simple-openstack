@@ -110,16 +110,16 @@ class OpenstackInstanceManager(
         return OpenstackInstance
 
     def create(self, model: OpenstackInstance):
-        from simpleopenstack.common import ensure_exists
+        from simpleopenstack.common import raise_if_absent
         from simpleopenstack.factories import OpenstackManagerFactory
 
         manager_factory = OpenstackManagerFactory(self.openstack_connector)
-        ensure_exists(model.image, manager_factory.create_image_manager())
-        ensure_exists(model.flavor, manager_factory.create_flavor_manager())
-        ensure_exists(model.key_name, manager_factory.create_keypair_manager())
+        raise_if_absent(model.image, manager_factory.create_image_manager())
+        raise_if_absent(model.flavor, manager_factory.create_flavor_manager())
+        raise_if_absent(model.key_name, manager_factory.create_keypair_manager())
         network_manager = manager_factory.create_network_manager()
         for network in model.networks:
-            ensure_exists(network, network_manager)
+            raise_if_absent(network, network_manager)
 
         return self._create(model)
 

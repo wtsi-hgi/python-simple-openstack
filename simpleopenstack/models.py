@@ -139,3 +139,9 @@ class OpenstackNetwork(OpenstackItem):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+class ItemNotFoundException(Exception):
+    """
+    TODO
+    """
