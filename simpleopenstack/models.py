@@ -1,6 +1,6 @@
 from abc import ABCMeta
 from datetime import datetime
-from typing import NewType, Set, Optional
+from typing import NewType, Set, Optional, List
 
 from sshpubkeys import SSHKey
 
@@ -109,13 +109,12 @@ class OpenstackInstance(OpenstackItem, Timestamped):
     """
     An instance on OpenStack.
     """
-    def __init__(self, image: str=None, key_name: str=None, flavor: str=None, networks: str=None, **kwargs):
+    def __init__(self, image: str=None, key_name: str=None, flavor: str=None, networks: List[str]=None, **kwargs):
         super().__init__(**kwargs)
         self.image = image
         self.key_name = key_name
         self.flavor = flavor
         self.networks = networks
-
 
 class OpenstackImage(OpenstackItem, Timestamped):
     """
@@ -140,3 +139,9 @@ class OpenstackNetwork(OpenstackItem):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+class ItemNotFoundException(Exception):
+    """
+    TODO
+    """
