@@ -2,9 +2,10 @@ import unittest
 from abc import ABCMeta
 
 from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackInstanceManager, \
-    MockOpenstackImageManager, MockOpenstack, MockOpenstackConnector, MockOpenstackFlavorManager
+    MockOpenstackImageManager, MockOpenstack, MockOpenstackConnector, MockOpenstackFlavorManager, \
+    MockOpenstackNetworkManager
 from simpleopenstack.tests._test_managers import OpenstackKeypairManagerTest, OpenstackInstanceManagerTest, \
-    OpenstackImageManagerTest, OpenstackFlavorManagerTest
+    OpenstackImageManagerTest, OpenstackFlavorManagerTest, OpenstackNetworkManagerTest
 
 
 class _MockOpenstackItemManagerTest(unittest.TestCase, metaclass=ABCMeta):
@@ -53,9 +54,19 @@ class MockOpenstackFlavorManagerTest(
         return MockOpenstackFlavorManager(self.openstack_connector)
 
 
+class MockOpenstackNetworkManagerTest(
+        _MockOpenstackItemManagerTest, OpenstackNetworkManagerTest[MockOpenstackNetworkManager]):
+    """
+    Tests for `MockOpenstackNetworkManager`.
+    """
+
+    def _create_manager(self) -> MockOpenstackNetworkManager:
+        return MockOpenstackNetworkManager(self.openstack_connector)
+
+
 # TODO: unittest is really stupid and will try to run the below as a test... Probably can add some ignore rules
-del OpenstackKeypairManagerTest, OpenstackInstanceManagerTest, OpenstackImageManagerTest, OpenstackFlavorManagerTest,\
-    _MockOpenstackItemManagerTest
+del OpenstackKeypairManagerTest, OpenstackInstanceManagerTest, OpenstackImageManagerTest, OpenstackFlavorManagerTest, \
+    OpenstackNetworkManagerTest, _MockOpenstackItemManagerTest
 
 
 if __name__ == "__main__":

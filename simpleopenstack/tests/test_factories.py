@@ -4,9 +4,9 @@ from typing import Type, Generic, TypeVar
 
 from simpleopenstack.factories import OpenstackKeypairManagerFactory, OpenstackItemManagerFactory, \
     OpenstackInstanceManagerFactory, OpenstackImageManagerFactory, OpenstackManagerFactory, \
-    OpenstackFlavorManagerFactory
+    OpenstackFlavorManagerFactory, OpenstackNetworkManagerFactory
 from simpleopenstack.managers import OpenstackItemManager, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager, OpenstackFlavorManager
+    OpenstackImageManager, OpenstackFlavorManager, OpenstackNetworkManager
 from simpleopenstack.models import OpenstackConnector
 from simpleopenstack.os_managers import RealOpenstackConnector
 from simpleopenstack.os_mock_managers import MockOpenstackConnector, MockOpenstack
@@ -116,6 +116,20 @@ class TestOpenstackFlavorManagerFactory(
     @property
     def manager_type(self) -> Type[OpenstackFlavorManager]:
         return OpenstackFlavorManager
+
+
+class TestOpenstackNetworkManagerFactory(
+        _TestOpenstackItemManagerFactory[OpenstackNetworkManagerFactory, OpenstackNetworkManager]):
+    """
+    Tests for `OpenstackNetworkManagerFactory`.
+    """
+    @property
+    def factory_type(self) -> Type[OpenstackNetworkManagerFactory]:
+        return OpenstackNetworkManagerFactory
+
+    @property
+    def manager_type(self) -> Type[OpenstackNetworkManager]:
+        return OpenstackNetworkManager
 
 
 class TestOpenstackManagerFactory(unittest.TestCase):

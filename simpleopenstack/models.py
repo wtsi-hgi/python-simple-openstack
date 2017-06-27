@@ -109,11 +109,12 @@ class OpenstackInstance(OpenstackItem, Timestamped):
     """
     An instance on OpenStack.
     """
-    def __init__(self, image: str=None, key_name: str=None, flavor: str=None, **kwargs):
+    def __init__(self, image: str=None, key_name: str=None, flavor: str=None, networks: str=None, **kwargs):
         super().__init__(**kwargs)
         self.image = image
         self.key_name = key_name
         self.flavor = flavor
+        self.networks = networks
 
 
 class OpenstackImage(OpenstackItem, Timestamped):
@@ -128,6 +129,14 @@ class OpenstackImage(OpenstackItem, Timestamped):
 class OpenstackFlavor(OpenstackItem):
     """
     An OpenStack image flavour.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
+class OpenstackNetwork(OpenstackItem):
+    """
+    An OpenStack network.
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

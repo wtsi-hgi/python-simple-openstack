@@ -5,17 +5,19 @@ from dateutil.parser import parse as parse_datetime
 from glanceclient.client import Client as GlanceClient
 from glanceclient.exc import HTTPNotFound
 from keystoneclient.v2_0 import Client as KeystoneClient
+from novaclient.base import ManagerWithFind
 from novaclient.client import Client as NovaClient
 from novaclient.exceptions import ClientException, NotFound
 from novaclient.v2.flavors import Flavor
 from novaclient.v2.images import Image
 from novaclient.v2.keypairs import Keypair
+from novaclient.v2.networks import Network
 from novaclient.v2.servers import Server
 
 from simpleopenstack.managers import Managed, RawModel, OpenstackKeypairManager, OpenstackInstanceManager, \
-    OpenstackImageManager, OpenstackItemManager, Connector, OpenstackFlavorManager
+    OpenstackImageManager, OpenstackItemManager, Connector, OpenstackFlavorManager, OpenstackNetworkManager
 from simpleopenstack.models import OpenstackKeypair, OpenstackIdentifier, OpenstackInstance, OpenstackImage, \
-    OpenstackConnector, OpenstackItem, OpenstackFlavor
+    OpenstackConnector, OpenstackItem, OpenstackFlavor, OpenstackNetwork
 
 
 class RealOpenstackConnector(OpenstackConnector):
@@ -104,6 +106,14 @@ class _NovaManager(Generic[Managed, RawModel], _RawModelConvertingManager[Manage
     NOVA_VERSION = "2"
 
     @property
+    @abstractmethod
+    def _manager(self) -> ManagerWithFind:
+        """
+        TODO
+        :return:
+        """
+
+    @property
     def _client(self) -> NovaClient:
         if self._cached_client is None:
             self._cached_client = NovaClient(
@@ -112,37 +122,45 @@ class _NovaManager(Generic[Managed, RawModel], _RawModelConvertingManager[Manage
                 auth_url=self.openstack_connector.auth_url)
         return self._cached_client
 
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[RawModel]:
+        try:
+            return self._manager.get(identifier)
+        except NotFound:
+            return None
+
+    def _get_by_name_raw(self, name: str) -> Sequence[Managed]:
+        return self._manager.findall(name=name)
+
+    def _get_all_raw(self) -> Iterable[RawModel]:
+        return self._manager.list()
+
+    def _delete(self, identifier: OpenstackIdentifier):
+        self._manager.delete(identifier)
+
+    def _convert_raw(self, model: RawModel) -> Managed:
+        return self.item_type(
+            identifier=model.id,
+            name=model.name
+        )
+
 
 class NovaOpenstackKeypairManager(
         OpenstackKeypairManager[RealOpenstackConnector], _NovaManager[OpenstackKeypair, Keypair]):
     """
     Manager for OpenStack key-pairs.
     """
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Keypair]:
-        try:
-            return self._client.keypairs.get(identifier)
-        except NotFound:
-            return None
-
-    def _get_by_name_raw(self, name: str) -> Sequence[OpenstackKeypair]:
-        return self._client.keypairs.findall(name=name)
-
-    def _get_all_raw(self) -> Iterable[Keypair]:
-        return self._client.keypairs.list()
+    @property
+    def _manager(self) -> ManagerWithFind:
+        return self._client.keypair
 
     def _convert_raw(self, model: Keypair) -> OpenstackKeypair:
-        return OpenstackKeypair(
-            identifier=model.name,
-            name=model.name,
-            fingerprint=model.fingerprint,
-            public_key=model.public_key
-        )
-
-    def _delete(self, identifier: OpenstackIdentifier):
-        self._client.keypairs.delete(identifier)
+        converted = super()._convert_raw(model)
+        converted.fingerprint = model.fingerprint
+        converted.public_key = model.public_key
+        return converted
 
     def create(self, model: OpenstackKeypair) -> OpenstackKeypair:
-        return self._convert_raw(self._client.keypairs.create(name=model.name, public_key=model.public_key))
+        return self._convert_raw(self._manager.create(name=model.name, public_key=model.public_key))
 
 
 class NovaOpenstackInstanceManager(
@@ -151,35 +169,21 @@ class NovaOpenstackInstanceManager(
     Manager for OpenStack instances.
     """
     @property
-    def item_type(self) -> Type[OpenstackItem]:
-        return OpenstackInstance
-
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Server]:
-        try:
-            self._client.servers.get(identifier)
-        except HTTPNotFound:
-            return None
-
-    def _get_by_name_raw(self, name: str) -> Sequence[OpenstackInstance]:
-        return self._client.servers.findall(name=name)
-
-    def _get_all_raw(self) -> Iterable[Server]:
-        return self._client.servers.list()
+    def _manager(self) -> ManagerWithFind:
+        return self._client.instance
 
     def _convert_raw(self, model: Server) -> OpenstackInstance:
-        return OpenstackInstance(
-            identifier=model.id,
-            name=model.name,
-            created_at=parse_datetime(model.created),
-            updated_at=parse_datetime(model.updated),
-            image=model.image["id"],
-            key_name=model.key_name,
-            flavor=model.flavor["id"]
-        )
+        converted = super()._convert_raw(model)
+        converted.created_at = parse_datetime(model.created)
+        converted.updated_at = parse_datetime(model.updated)
+        converted.image = model.image["id"]
+        converted.key_name = model.key_name,
+        converted.flavor = model.flavor["id"]
+        return converted
 
     def _delete(self, identifier: OpenstackIdentifier):
         try:
-            self._client.servers.force_delete(identifier)
+            super().delete(identifier)
         except ClientException as e:
             if "nova.exception.InstanceInvalidState" not in e.message:
                 raise e
@@ -188,7 +192,6 @@ class NovaOpenstackInstanceManager(
 
     def _create(self, model: OpenstackInstance):
         image = OpenstackImage(model.image)
-
 
         # # TODO: This hints at the requirement of a flavor manager!
         # try:
@@ -199,6 +202,31 @@ class NovaOpenstackInstanceManager(
         #     except NotFound:
         #         raise ValueError(f"Could not find flavor with ID or name \"{model.flavor}\"")
         # self._client.servers.create(name=model.name, image=image.identifier, flavor=flavor.id, network="123")
+
+
+class NovaOpenstackFlavorManager(
+        OpenstackFlavorManager[RealOpenstackConnector], _NovaManager[OpenstackFlavor, Flavor]):
+    """
+    Manager for OpenStack image flavours.
+    """
+    @property
+    def _manager(self) -> ManagerWithFind:
+        return self._client.flavors
+
+    def create(self, model: OpenstackFlavor):
+        raise NotImplementedError()
+
+
+class NovaOpenstackNetworkManager(
+        OpenstackNetworkManager[RealOpenstackConnector], _NovaManager[OpenstackNetwork, Network]):
+    """
+    Manager for OpenStack networks.
+    """
+    def _manager(self) -> ManagerWithFind:
+        return self._client.network
+
+    def create(self, model: OpenstackFlavor):
+        raise NotImplementedError()
 
 
 class GlanceOpenstackImageManager(
@@ -252,42 +280,3 @@ class GlanceOpenstackImageManager(
     def create(self, model: OpenstackImage) -> OpenstackImage:
         return self._convert_raw(self._client.images.create(name=model.name))
 
-
-class NovaOpenstackFlavorManager(
-        OpenstackFlavorManager[RealOpenstackConnector], _NovaManager[OpenstackFlavor, Flavor]):
-    """
-    Manager for OpenStack image flavours.
-    """
-    @property
-    def item_type(self) -> Type[OpenstackItem]:
-        return OpenstackFlavor
-
-    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[Server]:
-        try:
-            self._client.flavors.get(identifier)
-        except HTTPNotFound:
-            return None
-
-    def _get_by_name_raw(self, name: str) -> Sequence[OpenstackFlavor]:
-        return self._client.flavors.find(name=name)
-
-    def _get_all_raw(self) -> Iterable[Server]:
-        return self._client.flavors.list()
-
-    def _convert_raw(self, model: Flavor) -> OpenstackFlavor:
-        return OpenstackFlavor(
-            identifier=model.id,
-            name=model.name
-        )
-
-    def _delete(self, identifier: OpenstackIdentifier):
-        try:
-            self._client.servers.force_delete(identifier)
-        except ClientException as e:
-            if "nova.exception.InstanceInvalidState" not in e.message:
-                raise e
-            self._client.servers.reset_state(identifier)
-            self._client.servers.force_delete(identifier)
-
-    def create(self, model: OpenstackFlavor):
-        raise NotImplementedError()

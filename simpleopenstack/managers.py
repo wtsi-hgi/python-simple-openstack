@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import TypeVar, Generic, Set, Type, Optional, List
 
 from simpleopenstack.models import OpenstackItem, OpenstackKeypair, OpenstackInstance, OpenstackImage, \
-    OpenstackIdentifier, OpenstackConnector, OpenstackFlavor
+    OpenstackIdentifier, OpenstackConnector, OpenstackFlavor, OpenstackNetwork
 
 Managed = TypeVar("Managed", bound=OpenstackItem)
 RawModel = TypeVar("RawModel")
@@ -138,3 +138,13 @@ class OpenstackFlavorManager(
     @property
     def item_type(self) -> Type[OpenstackFlavor]:
         return OpenstackFlavor
+
+
+class OpenstackNetworkManager(
+        Generic[Connector], OpenstackItemManager[OpenstackNetwork, Connector], metaclass=ABCMeta):
+    """
+    Manager of networks.
+    """
+    @property
+    def item_type(self) -> Type[OpenstackNetwork]:
+        return OpenstackNetwork
