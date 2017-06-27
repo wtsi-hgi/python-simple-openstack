@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Iterable, Set, Sequence, Optional, List, Type
+from types import SimpleNamespace
+from typing import Generic, Iterable, Set, Sequence, Optional, List, Type, Dict
 
 from dateutil.parser import parse as parse_datetime
 from glanceclient.client import Client as GlanceClient
@@ -13,6 +14,7 @@ from novaclient.v2.images import Image
 from novaclient.v2.keypairs import Keypair
 from novaclient.v2.networks import Network
 from novaclient.v2.servers import Server
+from neutronclient.v2_0.client import Client as NeutronClient
 
 from simpleopenstack.managers import Managed, RawModel, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackImageManager, OpenstackItemManager, Connector, OpenstackFlavorManager, OpenstackNetworkManager
@@ -66,14 +68,6 @@ class _RawModelConvertingManager(
         :return: all OpenStack items
         """
 
-    @abstractmethod
-    def _convert_raw(self, model: RawModel) -> Managed:
-        """
-        Converts the raw model to the domain model.
-        :param model: the raw model
-        :return: the domain model equivalent
-        """
-
     def __init__(self, openstack_connector: Connector):
         super().__init__(openstack_connector)
         self._cached_client = None
@@ -97,6 +91,20 @@ class _RawModelConvertingManager(
         for item in self._get_all_raw():
             models.add(self._convert_raw(item))
         return models
+
+    def _convert_raw(self, model: RawModel) -> Managed:
+        """
+        Converts the raw model to the domain model.
+
+        Default function returns an object of the type the manager deals with, with its identifier and name set.
+        :param model: the raw model
+        :return: the domain model equivalent
+        """
+        return self.item_type(
+            identifier=model.id,
+            name=model.name
+        )
+
 
 
 class _NovaManager(Generic[Managed, RawModel], _RawModelConvertingManager[Managed, RawModel], metaclass=ABCMeta):
@@ -137,12 +145,6 @@ class _NovaManager(Generic[Managed, RawModel], _RawModelConvertingManager[Manage
     def _delete(self, identifier: OpenstackIdentifier):
         self._manager.delete(identifier)
 
-    def _convert_raw(self, model: RawModel) -> Managed:
-        return self.item_type(
-            identifier=model.id,
-            name=model.name
-        )
-
 
 class NovaOpenstackKeypairManager(
         OpenstackKeypairManager[RealOpenstackConnector], _NovaManager[OpenstackKeypair, Keypair]):
@@ -179,6 +181,7 @@ class NovaOpenstackInstanceManager(
         converted.image = model.image["id"]
         converted.key_name = model.key_name,
         converted.flavor = model.flavor["id"]
+        converted.networks = [network for network in model.networks.keys()]
         return converted
 
     def _delete(self, identifier: OpenstackIdentifier):
@@ -200,6 +203,8 @@ class NovaOpenstackInstanceManager(
         flavor_manager = manager_factory.create_flavor_manager()
         flavor_id = (flavor_manager.get_by_id(model.flavor) or flavor_manager.get_by_name(model.flavor)[0]).identifier
 
+
+
         return self._convert_raw(self._client.servers.create(
             name=model.name, image=image_id, flavor=flavor_id, key_name=model.key_name,
             nics=[{"net-id": model.networks}]))
@@ -218,16 +223,42 @@ class NovaOpenstackFlavorManager(
         raise NotImplementedError()
 
 
-class NovaOpenstackNetworkManager(
-        OpenstackNetworkManager[RealOpenstackConnector], _NovaManager[OpenstackNetwork, Network]):
+class NeutronOpenstackNetworkManager(
+        OpenstackNetworkManager[RealOpenstackConnector], _RawModelConvertingManager[OpenstackNetwork, SimpleNamespace]):
     """
     Manager for OpenStack networks.
     """
-    def _manager(self) -> ManagerWithFind:
-        return self._client.network
+    @staticmethod
+    def _parse_result(result: Dict) -> List[SimpleNamespace]:
+        return [SimpleNamespace(**network) for network in result["networks"]]
 
-    def create(self, model: OpenstackFlavor):
-        raise NotImplementedError()
+    @property
+    def _client(self) -> NeutronClient:
+        if self._cached_client is None:
+            keystone = KeystoneClient(
+                auth_url=self.openstack_connector.auth_url, username=self.openstack_connector.username,
+                password=self.openstack_connector.password, tenant_name=self.openstack_connector.tenant)
+            neutron_endpoint = keystone.service_catalog.url_for(service_type="network", endpoint_type="publicURL")
+            self._cached_client = NeutronClient(endpoint_url=neutron_endpoint, token=keystone.auth_token)
+        return self._cached_client
+
+    def _get_by_id_raw(self, identifier: OpenstackIdentifier=None) -> Optional[SimpleNamespace]:
+        parsed_result = NeutronOpenstackNetworkManager._parse_result(self._client.list_networks(id=identifier))
+        assert len(parsed_result) <= 1
+        return parsed_result[0] if len(parsed_result) == 1 else None
+
+    def _get_by_name_raw(self, name: str) -> Sequence[SimpleNamespace]:
+        return NeutronOpenstackNetworkManager._parse_result(self._client.list_networks(name=name))
+
+    def _get_all_raw(self) -> Iterable[SimpleNamespace]:
+        return NeutronOpenstackNetworkManager._parse_result(self._client.list_networks())
+
+    def _delete(self, identifier: OpenstackIdentifier):
+        self._client.delete_network(identifier)
+
+    def create(self, model: OpenstackNetwork) -> OpenstackNetwork:
+        return self._convert_raw(
+            SimpleNamespace(**self._client.create_network({"network": {"name": model.name}})["network"]))
 
 
 class GlanceOpenstackImageManager(
@@ -236,10 +267,6 @@ class GlanceOpenstackImageManager(
     Manager for OpenStack images.
     """
     GLANCE_VERSION = "2"
-
-    @property
-    def item_type(self) -> Type[OpenstackItem]:
-        return OpenstackImage
 
     @property
     def _client(self) -> GlanceClient:

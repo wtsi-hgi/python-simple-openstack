@@ -8,6 +8,8 @@ def ensure_exists(identifier: str, item_manager: OpenstackItemManager):
     :param item_manager:
     :return:
     """
+    if identifier is None:
+        raise ValueError(f"None is not a valid identifier for items of type \"{item_manager.item_type.__name__}\"")
     item = item_manager.get_by_id(identifier)
     if item is None:
         items = item_manager.get_by_name(identifier)

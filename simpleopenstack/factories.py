@@ -3,9 +3,10 @@ from typing import TypeVar, Generic, Dict, Type
 
 from simpleopenstack.managers import OpenstackImageManager, OpenstackKeypairManager, OpenstackInstanceManager, \
     OpenstackItemManager, OpenstackFlavorManager, OpenstackNetworkManager
-from simpleopenstack.models import OpenstackConnector
+from simpleopenstack.models import OpenstackConnector, OpenstackItem, OpenstackNetwork, OpenstackFlavor, OpenstackImage, \
+    OpenstackInstance, OpenstackKeypair
 from simpleopenstack.os_managers import GlanceOpenstackImageManager, NovaOpenstackKeypairManager, \
-    NovaOpenstackInstanceManager, RealOpenstackConnector, NovaOpenstackFlavorManager, NovaOpenstackNetworkManager
+    NovaOpenstackInstanceManager, RealOpenstackConnector, NovaOpenstackFlavorManager, NeutronOpenstackNetworkManager
 from simpleopenstack.os_mock_managers import MockOpenstackKeypairManager, MockOpenstackInstanceManager, \
     MockOpenstackImageManager, MockOpenstackConnector, MockOpenstackFlavorManager, MockOpenstackNetworkManager
 
@@ -102,7 +103,7 @@ class OpenstackNetworkManagerFactory(OpenstackItemManagerFactory[OpenstackNetwor
     @staticmethod
     def _connector_manager_map():
         return {
-            RealOpenstackConnector: NovaOpenstackNetworkManager,
+            RealOpenstackConnector: NeutronOpenstackNetworkManager,
             MockOpenstackConnector: MockOpenstackNetworkManager
         }
 
@@ -111,6 +112,15 @@ class OpenstackManagerFactory(_OpenstackFactory):
     """
     Factory for creating Openstack managers for different types of Openstack items.
     """
+    def create_for_managing(self, item_type: Type[OpenstackItem]) -> OpenstackItemManager:
+        return {
+            OpenstackKeypair: OpenstackKeypairManagerFactory,
+            OpenstackInstance: OpenstackInstanceManagerFactory,
+            OpenstackImage: OpenstackImageManagerFactory,
+            OpenstackFlavor: OpenstackFlavorManagerFactory,
+            OpenstackNetwork: OpenstackNetworkManagerFactory,
+        }[item_type](self.openstack_connector).create()
+
     def create_keypair_manager(self) -> OpenstackKeypairManager:
         return OpenstackKeypairManagerFactory(self.openstack_connector).create()
 
