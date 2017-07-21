@@ -187,7 +187,7 @@ class NovaOpenstackInstanceManager(
 
     def _delete(self, identifier: OpenstackIdentifier):
         try:
-            super().delete(identifier)
+            super()._delete(identifier)
         except ClientException as e:
             if "nova.exception.InstanceInvalidState" not in e.message:
                 raise e
