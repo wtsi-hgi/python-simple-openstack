@@ -182,6 +182,7 @@ class NovaOpenstackInstanceManager(
         converted.key_name = model.key_name,
         converted.flavor = model.flavor["id"]
         converted.networks = [network for network in model.networks.keys()]
+        converted.status = model.status
         return converted
 
     def _delete(self, identifier: OpenstackIdentifier):

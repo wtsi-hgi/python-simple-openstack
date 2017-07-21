@@ -1,5 +1,6 @@
 from abc import ABCMeta
 from datetime import datetime
+from enum import Enum
 from typing import NewType, Set, Optional, List
 
 from sshpubkeys import SSHKey
@@ -109,12 +110,19 @@ class OpenstackInstance(OpenstackItem, Timestamped):
     """
     An instance on OpenStack.
     """
-    def __init__(self, image: str=None, key_name: str=None, flavor: str=None, networks: List[str]=None, **kwargs):
+    class Status(Enum):
+        ACTIVE = "ACTIVE"
+        BUILD = "BUILD"
+        ERROR = "ERROR"
+
+    def __init__(self, image: str=None, key_name: str=None, flavor: str=None, networks: List[str]=None,
+                 status: str=None, **kwargs):
         super().__init__(**kwargs)
         self.image = image
         self.key_name = key_name
         self.flavor = flavor
         self.networks = networks
+        self.status = status
 
 class OpenstackImage(OpenstackItem, Timestamped):
     """
